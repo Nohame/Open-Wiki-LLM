@@ -6,6 +6,8 @@ export default {
     './components/**/*.{vue,ts}',
     './layouts/**/*.vue',
     './pages/**/*.vue',
+    './composables/**/*.ts',
+    './stores/**/*.ts',
     './app.vue',
   ],
   plugins: [require('@tailwindcss/typography')],
