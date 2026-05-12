@@ -25,8 +25,19 @@ def rebuild_index() -> int:
 
 
 def search(query: str, limit: int = 10) -> list[SearchResult]:
+    import sqlite3
+    import re
+    # Sanitize query for FTS5: remove special characters that cause syntax errors
+    tokens = re.sub(r'[^\w\s]', ' ', query, flags=re.UNICODE).split()
+    if not tokens:
+        return []
+    # Use OR semantics so partial term matches still return results
+    safe_query = " OR ".join(tokens)
     index = _get_index()
-    results = index.search(query, limit=limit)
+    try:
+        results = index.search(safe_query, limit=limit)
+    except sqlite3.OperationalError:
+        return []
     return [
         SearchResult(
             slug=r["slug"],
