@@ -1,0 +1,17 @@
+services:
+  openwikillm-api:
+    build:
+      context: ./backend
+    container_name: openwikillm-api
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./raw:/app/raw
+      - ./wiki:/app/wiki
+      - ./data:/app/data
+      - ./docs:/app/docs
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
