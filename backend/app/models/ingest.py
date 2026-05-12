@@ -1,0 +1,14 @@
+from pydantic import BaseModel
+
+
+class IngestTextRequest(BaseModel):
+    text: str
+    title: str | None = None
+    tags: list[str] = []
+
+
+class IngestResult(BaseModel):
+    slug: str
+    raw_path: str
+    wiki_path: str
+    title: str
