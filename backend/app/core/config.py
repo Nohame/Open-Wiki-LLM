@@ -26,6 +26,10 @@ class Settings(BaseSettings):
         default="mistral",
         validation_alias="OLLAMA_MODEL",
     )
+    ollama_vision_model: str = Field(
+        default="llava",
+        validation_alias="OLLAMA_VISION_MODEL",
+    )
 
     api_key: str = Field(
         default="",

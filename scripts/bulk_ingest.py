@@ -23,6 +23,7 @@ import httpx
 
 MANIFEST_PATH = Path("data/ingest_manifest.json")
 SUPPORTED_EXTENSIONS = {".md", ".txt"}
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +83,7 @@ def _print_summary(treated: int, skips: int, errors: int) -> None:
 
 def discover_files(raw_dir: Path) -> list[Path]:
     files = []
-    for ext in SUPPORTED_EXTENSIONS:
+    for ext in SUPPORTED_EXTENSIONS | IMAGE_EXTENSIONS:
         files.extend(sorted(raw_dir.rglob(f"*{ext}")))
     return files
 
@@ -95,6 +96,8 @@ def ingest_file(
     api_key: str,
 ) -> dict:
     headers = {"X-API-Key": api_key} if api_key else {}
+    if path.suffix.lower() in IMAGE_EXTENSIONS:
+        return _ingest_image_file(path, title, tags, api_url, headers)
     payload = {
         "text": path.read_text(encoding="utf-8"),
         "title": title,
@@ -102,6 +105,26 @@ def ingest_file(
     }
     with httpx.Client(timeout=120.0) as client:
         response = client.post(f"{api_url}/api/ingest/text", json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json()
+
+
+def _ingest_image_file(
+    path: Path,
+    title: str,
+    tags: list[str],
+    api_url: str,
+    headers: dict,
+) -> dict:
+    mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}
+    mime = mime_map.get(path.suffix.lower(), "image/png")
+    with httpx.Client(timeout=180.0) as client:
+        response = client.post(
+            f"{api_url}/api/ingest/image",
+            headers=headers,
+            data={"title": title, "tags": ",".join(tags)},
+            files={"file": (path.name, path.read_bytes(), mime)},
+        )
         response.raise_for_status()
         return response.json()
 
