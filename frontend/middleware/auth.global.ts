@@ -1,8 +1,10 @@
+import { useAuthStore } from '~/stores/auth'
+
 export default defineNuxtRouteMiddleware((to) => {
   if (to.path === '/login') return
 
-  if (typeof window !== 'undefined') {
-    const key = localStorage.getItem('openwikillm_api_key')
-    if (!key) return navigateTo('/login')
-  }
+  const authStore = useAuthStore()
+  authStore.loadFromStorage()
+
+  if (!authStore.isAuthenticated) return navigateTo('/login')
 })

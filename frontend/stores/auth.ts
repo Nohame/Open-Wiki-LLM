@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, readonly } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
   const apiKey = ref('')
@@ -25,5 +25,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { apiKey, isAuthenticated, setApiKey, loadFromStorage, logout }
+  return { apiKey: readonly(apiKey), isAuthenticated, setApiKey, loadFromStorage, logout }
 })

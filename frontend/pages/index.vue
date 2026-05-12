@@ -1,3 +1,3 @@
 <script setup lang="ts">
-navigateTo('/chat')
+await navigateTo('/chat')
 </script>

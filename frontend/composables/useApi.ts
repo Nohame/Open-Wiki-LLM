@@ -11,15 +11,17 @@ export function useApi() {
     return h
   }
 
+  function onResponseError({ response }: { response: { status: number } }) {
+    if (response.status === 401) {
+      authStore.logout()
+      navigateTo('/login')
+    }
+  }
+
   async function get<T>(path: string): Promise<T> {
     return $fetch<T>(`${baseUrl}${path}`, {
       headers: headers(),
-      onResponseError({ response }) {
-        if (response.status === 401) {
-          authStore.logout()
-          navigateTo('/login')
-        }
-      },
+      onResponseError,
     })
   }
 
@@ -28,12 +30,7 @@ export function useApi() {
       method: 'POST',
       headers: headers({ 'Content-Type': 'application/json' }),
       body,
-      onResponseError({ response }) {
-        if (response.status === 401) {
-          authStore.logout()
-          navigateTo('/login')
-        }
-      },
+      onResponseError,
     })
   }
 
@@ -42,12 +39,7 @@ export function useApi() {
       method: 'POST',
       headers: headers(),
       body: formData,
-      onResponseError({ response }) {
-        if (response.status === 401) {
-          authStore.logout()
-          navigateTo('/login')
-        }
-      },
+      onResponseError,
     })
   }
 
