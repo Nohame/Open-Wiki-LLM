@@ -1,0 +1,22 @@
+# Jeu de données golden pour évaluer POST /api/answer
+# Format :
+#   id        : identifiant unique
+#   question  : question posée à l'API
+#   mode      : draft | strict | source_only | validated_only
+#   expected_keywords : mots-clés attendus dans la réponse (au moins 1)
+#   notes     : contexte optionnel
+
+- id: livraison_01
+  question: "Quel est le délai de livraison ?"
+  mode: validated_only
+  expected_keywords:
+    - "24h"
+    - "livraison"
+  notes: "Page 'Livraison 24h' doit être validée et indexée"
+
+- id: fallback_01
+  question: "Quel est le prix du produit X inexistant ?"
+  mode: strict
+  expected_keywords:
+    - "ne trouve pas"
+  notes: "Aucune page ne correspond — le fallback doit s'activer"
