@@ -1,0 +1,35 @@
+{
+  "name": "openwikillm-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "nuxt": "^3.15.0",
+    "vue": "^3.5.0",
+    "pinia": "^2.2.0",
+    "@pinia/nuxt": "^0.9.0",
+    "@vueuse/nuxt": "^11.0.0",
+    "@vueuse/core": "^11.0.0",
+    "lucide-vue-next": "^0.462.0",
+    "marked": "^14.0.0",
+    "dompurify": "^3.1.0"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0",
+    "@vue/test-utils": "^2.4.0",
+    "happy-dom": "^15.0.0",
+    "@types/dompurify": "^3.0.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@tailwindcss/typography": "^0.5.0"
+  }
+}

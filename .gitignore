@@ -24,3 +24,10 @@ logs/
 # IDE
 .idea/
 .vscode/
+
+# Frontend (Nuxt / Node)
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/dist/
+frontend/.env
