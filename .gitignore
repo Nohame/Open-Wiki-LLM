@@ -19,6 +19,7 @@ data/*.db
 
 # Logs
 logs/
+!logs/.gitkeep
 
 # IDE
 .idea/
