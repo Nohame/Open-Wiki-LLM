@@ -31,6 +31,7 @@ export interface IngestResult {
   raw_path: string
   wiki_path: string
   title: string
+  pages_updated: string[]
 }
 
 export type AnswerMode = 'validated_only' | 'strict' | 'draft' | 'source_only'

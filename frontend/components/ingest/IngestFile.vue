@@ -39,17 +39,17 @@
       <li
         v-for="entry in entries"
         :key="entry.file.name"
-        class="flex items-center justify-between text-sm rounded px-3 py-2 bg-gray-900"
+        class="flex items-start justify-between text-sm rounded px-3 py-2 bg-gray-900"
       >
-        <span class="text-gray-300 truncate max-w-xs">{{ entry.file.name }}</span>
-        <span class="ml-4 shrink-0">
+        <span class="text-gray-300 truncate max-w-xs mt-0.5">{{ entry.file.name }}</span>
+        <span class="ml-4 shrink-0 text-right">
           <span v-if="entry.status === 'pending'" class="text-gray-500">en attente</span>
-          <span v-else-if="entry.status === 'processing'" class="text-blue-400 animate-pulse">en cours...</span>
+          <span v-else-if="entry.status === 'processing'" class="text-blue-400 animate-pulse">
+            {{ processingPhase === 'analyse' ? 'Analyse des pages liées...' : 'Compilation du wiki...' }}
+          </span>
           <span v-else-if="entry.status === 'done'" class="text-green-400">
-            ✓
-            <NuxtLink :to="`/wiki/${entry.slug}`" class="ml-1 underline hover:text-white">
-              {{ entry.slug }}
-            </NuxtLink>
+            <span>✓ <NuxtLink :to="`/wiki/${entry.slug}`" class="underline hover:text-white">{{ entry.slug }}</NuxtLink></span>
+            <span v-for="s in entry.pagesUpdated" :key="s" class="block text-xs text-blue-300 mt-0.5">↻ {{ s }}</span>
           </span>
           <span v-else class="text-red-400">✗ {{ entry.error }}</span>
         </span>
@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { FolderOpen } from 'lucide-vue-next'
 import { useIngest } from '~/composables/useIngest'
 
@@ -88,6 +88,7 @@ interface FileEntry {
   file: File
   status: 'pending' | 'processing' | 'done' | 'error'
   slug?: string
+  pagesUpdated?: string[]
   error?: string
 }
 
@@ -99,10 +100,16 @@ const isDragging = ref(false)
 const tagsInput = ref('')
 const entries = ref<FileEntry[]>([])
 const rejectedMessage = ref('')
+const processingPhase = ref<'analyse' | 'compilation'>('analyse')
+let phaseTimer: ReturnType<typeof setTimeout> | null = null
 
 const isProcessing = computed(() => entries.value.some((e) => e.status === 'processing'))
 
 const { ingestFile } = useIngest()
+
+onUnmounted(() => {
+  if (phaseTimer) clearTimeout(phaseTimer)
+})
 
 function addFiles(files: FileList | File[]) {
   const rejected: string[] = []
@@ -143,18 +150,20 @@ function onFileInput(e: Event) {
 async function ingestAll() {
   if (isProcessing.value) return
   rejectedMessage.value = ''
-  const tags = tagsInput.value
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
+  const tags = tagsInput.value.split(',').map((t) => t.trim()).filter(Boolean)
   for (const entry of entries.value) {
     if (entry.status !== 'pending') continue
     entry.status = 'processing'
+    processingPhase.value = 'analyse'
+    phaseTimer = setTimeout(() => { processingPhase.value = 'compilation' }, 8000)
     try {
       const result = await ingestFile(entry.file, tags)
+      if (phaseTimer) { clearTimeout(phaseTimer); phaseTimer = null }
       entry.status = 'done'
       entry.slug = result.slug
+      entry.pagesUpdated = result.pages_updated
     } catch (err: unknown) {
+      if (phaseTimer) { clearTimeout(phaseTimer); phaseTimer = null }
       entry.status = 'error'
       entry.error = err instanceof Error ? err.message : 'Erreur inconnue'
     }

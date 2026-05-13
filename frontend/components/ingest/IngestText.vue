@@ -35,8 +35,8 @@
     <p v-if="error" class="text-red-400 text-sm">{{ error }}</p>
 
     <div v-if="result" class="p-3 bg-green-900/30 border border-green-700 rounded-lg space-y-1">
-      <p class="text-green-400 text-sm font-medium">✓ Page créée</p>
-      <p class="text-gray-400 text-xs">Slug : {{ result.slug }}</p>
+      <p class="text-green-400 text-sm font-medium">✓ {{ result.slug }} créé</p>
+      <p v-for="s in result.pages_updated" :key="s" class="text-blue-300 text-xs">↻ {{ s }} mis à jour</p>
       <NuxtLink :to="`/wiki/${result.slug}`" class="text-blue-400 text-xs hover:underline">
         Voir la page →
       </NuxtLink>
@@ -47,22 +47,38 @@
       :disabled="loading"
       class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
     >
-      {{ loading ? 'Ingestion en cours...' : 'Ingérer →' }}
+      {{ loadingLabel }}
     </button>
   </form>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onUnmounted } from 'vue'
+
 const { result, loading, error, ingestText, reset } = useIngest()
 
 const title = ref('')
 const tagsInput = ref('')
 const text = ref('')
+const phase = ref<'analyse' | 'compilation'>('analyse')
+let phaseTimer: ReturnType<typeof setTimeout> | null = null
+
+const loadingLabel = computed(() => {
+  if (!loading.value) return 'Ingérer →'
+  return phase.value === 'analyse' ? 'Analyse des pages liées...' : 'Compilation du wiki...'
+})
+
+onUnmounted(() => {
+  if (phaseTimer) clearTimeout(phaseTimer)
+})
 
 async function handleSubmit() {
   reset()
+  phase.value = 'analyse'
+  phaseTimer = setTimeout(() => { phase.value = 'compilation' }, 8000)
   const tags = tagsInput.value.split(',').map((t) => t.trim()).filter(Boolean)
   await ingestText(text.value, title.value, tags)
+  if (phaseTimer) { clearTimeout(phaseTimer); phaseTimer = null }
   if (result.value) {
     title.value = ''
     tagsInput.value = ''
