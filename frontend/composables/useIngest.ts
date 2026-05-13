@@ -38,10 +38,18 @@ export function useIngest() {
     }
   }
 
+  async function ingestFile(file: File, tags: string[]): Promise<IngestResult> {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('title', file.name.replace(/\.[^.]+$/, ''))
+    form.append('tags', tags.join(','))
+    return postForm<IngestResult>('/api/ingest/file', form)
+  }
+
   function reset() {
     result.value = null
     error.value = ''
   }
 
-  return { result, loading, error, ingestText, ingestImage, reset }
+  return { result, loading, error, ingestText, ingestImage, ingestFile, reset }
 }

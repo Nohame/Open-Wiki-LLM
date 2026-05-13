@@ -2,7 +2,6 @@
   <div class="p-6 max-w-2xl mx-auto space-y-6">
     <h2 class="text-lg font-semibold text-white">Ingestion</h2>
 
-    <!-- Onglets -->
     <div class="flex border-b border-gray-800">
       <button
         v-for="tab in tabs"
@@ -21,16 +20,19 @@
     </div>
 
     <IngestText v-if="activeTab === 'text'" />
-    <IngestImage v-else />
+    <IngestImage v-else-if="activeTab === 'image'" />
+    <IngestFile v-else-if="activeTab === 'file'" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { FileText, ImageIcon } from 'lucide-vue-next'
+import { FileText, ImageIcon, FolderOpen } from 'lucide-vue-next'
+import IngestFile from '~/components/ingest/IngestFile.vue'
 
-const activeTab = ref<'text' | 'image'>('text')
+const activeTab = ref<'text' | 'image' | 'file'>('text')
 const tabs = [
   { id: 'text' as const, label: 'Texte', icon: FileText },
   { id: 'image' as const, label: 'Image', icon: ImageIcon },
+  { id: 'file' as const, label: 'Fichiers', icon: FolderOpen },
 ]
 </script>
