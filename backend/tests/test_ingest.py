@@ -32,9 +32,11 @@ Contenu structuré par Ollama.
 @pytest.fixture
 def client_with_dirs(monkeypatch):
     with tempfile.TemporaryDirectory() as wiki_tmp, \
-         tempfile.TemporaryDirectory() as raw_tmp:
+         tempfile.TemporaryDirectory() as raw_tmp, \
+         tempfile.TemporaryDirectory() as data_tmp:
         monkeypatch.setattr(settings, "wiki_path", wiki_tmp)
         monkeypatch.setattr(settings, "raw_path", raw_tmp)
+        monkeypatch.setattr(settings, "data_path", data_tmp)
         monkeypatch.setattr(settings, "api_key", "")
         yield TestClient(app)
 

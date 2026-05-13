@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from datetime import date
 from .ollama_service import compile_to_markdown, compile_image_to_markdown
+from .search_service import rebuild_index
 from ..core.config import settings
 
 
@@ -25,6 +26,8 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
     wiki_path.parent.mkdir(parents=True, exist_ok=True)
     wiki_path.write_text(markdown)
+
+    rebuild_index()
 
     return {
         "slug": f"imports--{slug}",

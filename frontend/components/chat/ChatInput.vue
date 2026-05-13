@@ -46,7 +46,7 @@ const props = defineProps<{ loading: boolean }>()
 const emit = defineEmits<{ send: [question: string, mode: AnswerMode] }>()
 
 const input = ref('')
-const selectedMode = ref<AnswerMode>('validated_only')
+const selectedMode = ref<AnswerMode>('draft')
 const textarea = ref<HTMLTextAreaElement>()
 
 function autoResize() {
