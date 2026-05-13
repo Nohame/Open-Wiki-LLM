@@ -4,6 +4,7 @@ from ..core.config import settings
 
 
 def _slug_to_path(slug: str) -> Path:
+    # slug format: "category--name" (exactly one "--" separator)
     if "--" in slug:
         folder, name = slug.split("--", 1)
         return Path(settings.wiki_path) / folder / f"{name}.md"
@@ -14,7 +15,7 @@ def load_index() -> str:
     index_path = Path(settings.wiki_path) / "index.md"
     if not index_path.exists():
         return ""
-    return index_path.read_text()
+    return index_path.read_text(encoding="utf-8")
 
 
 def load_pages(slugs: list[str]) -> dict[str, str]:
@@ -22,7 +23,7 @@ def load_pages(slugs: list[str]) -> dict[str, str]:
     for slug in slugs:
         path = _slug_to_path(slug)
         if path.exists():
-            result[slug] = path.read_text()
+            result[slug] = path.read_text(encoding="utf-8")
     return result
 
 
@@ -39,7 +40,7 @@ def apply_updates(updates: dict[str, str]) -> list[str]:
     for slug, content in updates.items():
         path = _slug_to_path(slug)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content)
+        path.write_text(content, encoding="utf-8")
         written.append(slug)
     return written
 
@@ -57,7 +58,7 @@ def rebuild_index_file() -> None:
         name = md_file.stem
         slug = f"{parts[0]}--{name}" if len(parts) > 1 else name
 
-        text = md_file.read_text()
+        text = md_file.read_text(encoding="utf-8")
         title = _extract_frontmatter_title(text) or name
         summary = _extract_resume_first_line(text) or ""
         categories.setdefault(category, []).append((slug, title, summary))
@@ -75,19 +76,20 @@ def rebuild_index_file() -> None:
             path_ref = slug.replace("--", "/")
             lines.append(f"| [{slug}]({path_ref}.md) | {summary} |")
 
-    (wiki_root / "index.md").write_text("\n".join(lines) + "\n")
+    (wiki_root / "index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def append_log(entry: str) -> None:
     log_path = Path(settings.wiki_path) / "log.md"
     header = "# Journal des ingestions\n\n"
     if log_path.exists():
-        existing = log_path.read_text()
+        existing = log_path.read_text(encoding="utf-8")
         if existing.startswith("# Journal des ingestions"):
-            existing = existing[len("# Journal des ingestions"):].lstrip("\n")
-        log_path.write_text(header + entry + "\n" + existing)
+            _, _, existing = existing.partition("\n")
+            existing = existing.lstrip("\n")
+        log_path.write_text(header + entry + "\n" + existing, encoding="utf-8")
     else:
-        log_path.write_text(header + entry + "\n")
+        log_path.write_text(header + entry + "\n", encoding="utf-8")
 
 
 def _extract_frontmatter_title(text: str) -> str | None:
