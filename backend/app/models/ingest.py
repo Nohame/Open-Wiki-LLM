@@ -12,3 +12,4 @@ class IngestResult(BaseModel):
     raw_path: str
     wiki_path: str
     title: str
+    pages_updated: list[str] = []

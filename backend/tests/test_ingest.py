@@ -28,6 +28,8 @@ Contenu structuré par Ollama.
 ## Points à confirmer
 """
 
+MOCK_XML = f'<page slug="imports--test-ingestion">{MOCK_MARKDOWN}</page>'
+
 
 @pytest.fixture
 def client_with_dirs(monkeypatch):
@@ -42,10 +44,8 @@ def client_with_dirs(monkeypatch):
 
 
 def test_ingest_text_creates_files(client_with_dirs):
-    with patch(
-        "app.services.ingest_service.compile_to_markdown",
-        new=AsyncMock(return_value=MOCK_MARKDOWN),
-    ):
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=MOCK_XML)):
         response = client_with_dirs.post(
             "/api/ingest/text",
             json={"text": "Texte source brut.", "title": "Test Ingestion", "tags": ["test"]},
@@ -55,13 +55,13 @@ def test_ingest_text_creates_files(client_with_dirs):
     assert data["slug"] == "imports--test-ingestion"
     assert Path(data["raw_path"]).exists()
     assert Path(data["wiki_path"]).exists()
+    assert data["pages_updated"] == []
 
 
 def test_ingest_text_without_title(client_with_dirs):
-    with patch(
-        "app.services.ingest_service.compile_to_markdown",
-        new=AsyncMock(return_value=MOCK_MARKDOWN),
-    ):
+    mock_xml = f'<page slug="imports--source-sans-titre">{MOCK_MARKDOWN}</page>'
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=mock_xml)):
         response = client_with_dirs.post(
             "/api/ingest/text",
             json={"text": "Texte sans titre."},
@@ -69,11 +69,47 @@ def test_ingest_text_without_title(client_with_dirs):
     assert response.status_code == 200
 
 
+def test_ingest_text_multi_page(client_with_dirs):
+    wiki_tmp = settings.wiki_path
+    Path(wiki_tmp, "imports").mkdir(parents=True, exist_ok=True)
+    Path(wiki_tmp, "imports", "existing.md").write_text(
+        "---\ntitle: Existing\n---\n\n## Résumé\n\nPage existante.\n",
+        encoding="utf-8",
+    )
+
+    xml_two_pages = (
+        f'<page slug="imports--test-ingestion">{MOCK_MARKDOWN}</page>\n'
+        '<page slug="imports--existing">---\ntitle: Existing\n---\n\n## Résumé\n\nMis à jour.\n</page>'
+    )
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=["imports--existing"])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=xml_two_pages)):
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "Texte source.", "title": "Test Ingestion", "tags": []},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["pages_updated"] == ["imports--existing"]
+    assert Path(wiki_tmp, "index.md").exists()
+
+
+def test_ingest_text_no_related(client_with_dirs):
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=MOCK_XML)):
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "Texte source.", "title": "Test Ingestion", "tags": []},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["pages_updated"] == []
+
+
 def test_ingest_file_endpoint_txt(client_with_dirs):
-    with patch(
-        "app.services.ingest_service.compile_to_markdown",
-        new=AsyncMock(return_value=MOCK_MARKDOWN),
-    ):
+    mock_xml = f'<page slug="imports--rapport">{MOCK_MARKDOWN}</page>'
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=mock_xml)):
         response = client_with_dirs.post(
             "/api/ingest/file",
             files={"file": ("rapport.txt", b"Contenu du fichier texte.", "text/plain")},
@@ -86,10 +122,9 @@ def test_ingest_file_endpoint_txt(client_with_dirs):
 
 
 def test_ingest_file_endpoint_with_title(client_with_dirs):
-    with patch(
-        "app.services.ingest_service.compile_to_markdown",
-        new=AsyncMock(return_value=MOCK_MARKDOWN),
-    ):
+    mock_xml = f'<page slug="imports--mon-titre-custom">{MOCK_MARKDOWN}</page>'
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=mock_xml)):
         response = client_with_dirs.post(
             "/api/ingest/file",
             files={"file": ("doc.md", b"# Titre\n\nContenu.", "text/markdown")},

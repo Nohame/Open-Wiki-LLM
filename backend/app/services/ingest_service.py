@@ -1,7 +1,8 @@
 import re
 from pathlib import Path
 from datetime import date
-from .ollama_service import compile_to_markdown, compile_image_to_markdown
+from .ollama_service import compile_image_to_markdown, identify_related_pages, compile_multi_page
+from . import wiki_manager, schema_service
 from .search_service import rebuild_index
 from ..core.config import settings
 
@@ -16,24 +17,42 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     today = date.today().isoformat()
     effective_title = title or "Source sans titre"
     slug = _slugify(effective_title)
+    new_slug = f"imports--{slug}"
 
     raw_path = Path(settings.raw_path) / "imports" / f"{slug}.md"
     raw_path.parent.mkdir(parents=True, exist_ok=True)
-    raw_path.write_text(text)
+    raw_path.write_text(text, encoding="utf-8")
 
-    markdown = await compile_to_markdown(text, effective_title, tags, today)
+    schema = schema_service.load_or_create()
+    index_content = wiki_manager.load_index()
 
-    wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
-    wiki_path.parent.mkdir(parents=True, exist_ok=True)
-    wiki_path.write_text(markdown)
+    related_slugs = await identify_related_pages(text, effective_title, index_content)
+    related_pages = wiki_manager.load_pages(related_slugs)
+
+    xml_output = await compile_multi_page(
+        text, effective_title, tags, today, schema, related_pages, new_slug
+    )
+
+    updates = wiki_manager.parse_xml_updates(xml_output)
+    written_slugs = wiki_manager.apply_updates(updates)
+
+    wiki_manager.rebuild_index_file()
+    pages_updated = [s for s in written_slugs if s != new_slug]
+    wiki_manager.append_log(
+        f"## [{today}] ingest | {slug}\n"
+        f"- Pages créées : {new_slug}\n"
+        f"- Pages mises à jour : {', '.join(pages_updated) or '—'}\n"
+    )
 
     rebuild_index()
 
+    wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
     return {
-        "slug": f"imports--{slug}",
+        "slug": new_slug,
         "raw_path": str(raw_path),
         "wiki_path": str(wiki_path),
         "title": effective_title,
+        "pages_updated": pages_updated,
     }
 
 
@@ -51,11 +70,12 @@ async def ingest_image(image_bytes: bytes, filename: str, title: str | None, tag
 
     wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
     wiki_path.parent.mkdir(parents=True, exist_ok=True)
-    wiki_path.write_text(markdown)
+    wiki_path.write_text(markdown, encoding="utf-8")
 
     return {
         "slug": f"imports--{slug}",
         "raw_path": str(raw_path),
         "wiki_path": str(wiki_path),
         "title": effective_title,
+        "pages_updated": [],
     }
