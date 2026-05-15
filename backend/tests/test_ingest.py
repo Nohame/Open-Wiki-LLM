@@ -48,6 +48,24 @@ tags: []
 Outil de gestion tickets.
 """
 
+ENTITY_MARKDOWN = """\
+---
+title: Alizee
+type: entity
+status: draft
+confidence: medium
+sources: []
+updated_at: 2026-05-15
+tags: []
+---
+
+# Alizee
+
+## Résumé
+
+Responsable logistique.
+"""
+
 
 @pytest.fixture
 def client_with_dirs(monkeypatch):
@@ -147,6 +165,25 @@ def test_ingest_text_with_concepts(client_with_dirs):
     assert data["entities_created"] == []
     assert data["pages_updated"] == []
     assert Path(settings.wiki_path, "concept", "groove.md").exists()
+
+
+def test_ingest_text_with_entities(client_with_dirs):
+    xml_with_entity = (
+        f'<page slug="imports--test-ingestion">{MOCK_MARKDOWN}</page>\n'
+        f'<page slug="entity--alizee">{ENTITY_MARKDOWN}</page>'
+    )
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=xml_with_entity)):
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "Alizee gère la logistique.", "title": "Test Ingestion", "tags": []},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["entities_created"] == ["entity--alizee"]
+    assert data["concepts_created"] == []
+    assert data["pages_updated"] == []
+    assert Path(settings.wiki_path, "entity", "alizee.md").exists()
 
 
 def test_ingest_file_endpoint_txt(client_with_dirs):

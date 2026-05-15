@@ -72,6 +72,7 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     }
 
 
+# Image ingest does not append to wiki/log.md — only text ingest is logged.
 async def ingest_image(image_bytes: bytes, filename: str, title: str | None, tags: list[str]) -> dict:
     today = date.today().isoformat()
     effective_title = title or Path(filename).stem.replace("-", " ").replace("_", " ").capitalize()
