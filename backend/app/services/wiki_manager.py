@@ -79,6 +79,13 @@ def rebuild_index_file() -> None:
     (wiki_root / "index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def load_log() -> str:
+    log_path = Path(settings.wiki_path) / "log.md"
+    if not log_path.exists():
+        return ""
+    return log_path.read_text(encoding="utf-8")
+
+
 def append_log(entry: str) -> None:
     log_path = Path(settings.wiki_path) / "log.md"
     header = "# Journal des ingestions\n\n"

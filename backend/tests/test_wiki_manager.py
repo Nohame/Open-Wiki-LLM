@@ -113,3 +113,18 @@ def test_append_log_prepends(tmp_path, monkeypatch):
 
     content = (tmp_path / "log.md").read_text()
     assert content.index("deuxieme") < content.index("premier")
+
+
+def test_load_log_absent(tmp_path, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    from app.services.wiki_manager import load_log
+    assert load_log() == ""
+
+
+def test_load_log_present(tmp_path, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    (tmp_path / "log.md").write_text("# Journal\n\n## test", encoding="utf-8")
+    from app.services.wiki_manager import load_log
+    assert load_log() == "# Journal\n\n## test"
