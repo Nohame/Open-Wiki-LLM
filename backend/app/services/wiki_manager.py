@@ -1,6 +1,10 @@
+import logging
 import re
 from pathlib import Path
+import frontmatter as fm
 from ..core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _slug_to_path(slug: str) -> Path:
@@ -9,6 +13,20 @@ def _slug_to_path(slug: str) -> Path:
         folder, name = slug.split("--", 1)
         return Path(settings.wiki_path) / folder / f"{name}.md"
     return Path(settings.wiki_path) / f"{slug}.md"
+
+
+def set_stale(slug: str, stale: bool) -> None:
+    path = _slug_to_path(slug)
+    if not path.exists():
+        logger.warning("set_stale: slug introuvable : %s", slug)
+        return
+    try:
+        post = fm.load(str(path))
+    except Exception:
+        logger.warning("set_stale: frontmatter malformé pour %s", slug)
+        return
+    post.metadata["stale"] = stale
+    path.write_text(fm.dumps(post), encoding="utf-8")
 
 
 def load_index() -> str:
