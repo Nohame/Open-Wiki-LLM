@@ -104,9 +104,9 @@ Pour chaque page à créer ou modifier, utilise ce format EXACT :
 </page>
 
 Règles :
-- Crée une page de type `source` pour le document (slug : {new_slug})
-- Si le document contient des concepts métier distincts, crée ou mets à jour les pages concept-- correspondantes (ex: concept--groove-tags)
-- Si le document mentionne des entités (personnes, fournisseurs, outils, systèmes), crée ou mets à jour les pages entity-- correspondantes (ex: entity--alizee)
+- Crée une page principale pour le document source (slug : {new_slug}, type : concept)
+- Si le document contient des concepts métier distincts, crée ou mets à jour les pages concept-- correspondantes (ex: concept--groove-tags, type : concept)
+- Si le document mentionne des entités (personnes, fournisseurs, outils, systèmes), crée ou mets à jour les pages entity-- correspondantes (ex: entity--alizee, type : entity)
 - Mets à jour les pages liées existantes : nouvelles informations, corrections, cross-refs [[slug]]
 - N'inclus QUE les pages qui changent réellement
 - Réponds UNIQUEMENT avec les balises <page>, sans commentaire
