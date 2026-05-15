@@ -16,6 +16,13 @@ class SearchIndex:
                 CREATE VIRTUAL TABLE IF NOT EXISTS wiki_pages_fts
                 USING fts5(slug, title, content, tags)
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS page_references (
+                    page_slug TEXT NOT NULL,
+                    source_slug TEXT NOT NULL,
+                    PRIMARY KEY (page_slug, source_slug)
+                )
+            """)
 
     def index_page(self, slug: str, title: str, content: str, tags: str) -> None:
         with self._connect() as conn:
