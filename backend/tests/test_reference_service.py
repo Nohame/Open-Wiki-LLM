@@ -1,4 +1,3 @@
-import tempfile
 from pathlib import Path
 import pytest
 from app.core.config import settings
@@ -25,9 +24,12 @@ def _write_page(wiki_path: str, slug: str, sources: list[str]) -> None:
     else:
         p = Path(wiki_path) / f"{slug}.md"
     p.parent.mkdir(parents=True, exist_ok=True)
-    sources_yaml = "\n".join(f"  - {s}" for s in sources)
+    if sources:
+        sources_yaml = "sources:\n" + "\n".join(f"  - {s}" for s in sources) + "\n"
+    else:
+        sources_yaml = "sources: []\n"
     p.write_text(
-        f"---\ntitle: Test\nsources:\n{sources_yaml}\n---\n\n# Test\n",
+        f"---\ntitle: Test\n{sources_yaml}---\n\n# Test\n",
         encoding="utf-8",
     )
 
@@ -86,8 +88,8 @@ def test_rebuild_references_malformed_frontmatter(wiki_env, caplog):
     p.write_text("---\ntitle: [broken yaml\n---\n\n# Broken\n", encoding="utf-8")
     from app.services.reference_service import rebuild_references
     with caplog.at_level(logging.WARNING):
-        rebuild_references()  # ne doit pas lever d'exception
-    assert True  # juste vérifier que ça ne crash pas
+        rebuild_references()
+    assert any("Frontmatter" in r.message for r in caplog.records)
 
 
 def test_get_references_unknown_slug(wiki_env):

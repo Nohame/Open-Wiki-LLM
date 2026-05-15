@@ -11,23 +11,11 @@ def _db_path() -> Path:
     return Path(settings.data_path) / "openwikillm.db"
 
 
-def _ensure_table() -> None:
-    with sqlite3.connect(str(_db_path())) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS page_references (
-                page_slug TEXT NOT NULL,
-                source_slug TEXT NOT NULL,
-                PRIMARY KEY (page_slug, source_slug)
-            )
-        """)
-
-
 def _path_to_slug(wiki_path: Path, file_path: Path) -> str:
     return str(file_path.relative_to(wiki_path).with_suffix("")).replace("/", "--")
 
 
 def rebuild_references() -> None:
-    _ensure_table()
     wiki_root = Path(settings.wiki_path)
     rows: list[tuple[str, str]] = []
     for md_file in wiki_root.rglob("*.md"):
@@ -47,8 +35,7 @@ def rebuild_references() -> None:
         conn.executemany("INSERT OR IGNORE INTO page_references VALUES (?, ?)", rows)
 
 
-def get_references(slug: str) -> dict:
-    _ensure_table()
+def get_references(slug: str) -> dict[str, list[str]]:
     with sqlite3.connect(str(_db_path())) as conn:
         references = [
             row[0]
