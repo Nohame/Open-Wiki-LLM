@@ -40,9 +40,17 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
 
     concepts_created = [s for s in written_slugs if s.startswith("concept--")]
     entities_created = [s for s in written_slugs if s.startswith("entity--")]
-    pages_updated = [s for s in written_slugs if s.startswith("imports--") and s != new_slug]
+    known_prefixes = ("concept--", "entity--", "imports--")
+    pages_updated = [
+        s for s in written_slugs
+        if (s.startswith("imports--") and s != new_slug)
+        or not s.startswith(known_prefixes)
+    ]
 
     wiki_manager.rebuild_index_file()
+    rebuild_index()
+
+    wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
     duration_s = round(time.monotonic() - start)
     wiki_manager.append_log(
         f"## [{today}] ingest | {slug}\n"
@@ -53,9 +61,6 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
         f"- Durée : {duration_s}s\n"
     )
 
-    rebuild_index()
-
-    wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
     return {
         "slug": new_slug,
         "raw_path": str(raw_path),
