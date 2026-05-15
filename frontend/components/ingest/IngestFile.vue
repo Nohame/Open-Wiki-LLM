@@ -50,6 +50,8 @@
           <span v-else-if="entry.status === 'done'" class="text-green-400">
             <span>✓ <NuxtLink :to="`/wiki/${entry.slug}`" class="underline hover:text-white">{{ entry.slug }}</NuxtLink></span>
             <span v-for="s in entry.pagesUpdated" :key="s" class="block text-xs text-blue-300 mt-0.5">↻ {{ s }}</span>
+            <span v-for="s in entry.conceptsCreated" :key="s" class="block text-xs text-purple-300 mt-0.5">+ {{ s }}</span>
+            <span v-for="s in entry.entitiesCreated" :key="s" class="block text-xs text-yellow-300 mt-0.5">+ {{ s }}</span>
           </span>
           <span v-else class="text-red-400">✗ {{ entry.error }}</span>
         </span>
@@ -89,6 +91,8 @@ interface FileEntry {
   status: 'pending' | 'processing' | 'done' | 'error'
   slug?: string
   pagesUpdated?: string[]
+  conceptsCreated?: string[]
+  entitiesCreated?: string[]
   error?: string
 }
 
@@ -162,6 +166,8 @@ async function ingestAll() {
       entry.status = 'done'
       entry.slug = result.slug
       entry.pagesUpdated = result.pages_updated
+      entry.conceptsCreated = result.concepts_created
+      entry.entitiesCreated = result.entities_created
     } catch (err: unknown) {
       if (phaseTimer) { clearTimeout(phaseTimer); phaseTimer = null }
       entry.status = 'error'

@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, MessageSquare, Library, Upload, PanelLeft } from 'lucide-vue-next'
+import { BookOpen, MessageSquare, Library, Upload, PanelLeft, ScrollText } from 'lucide-vue-next'
 import { useLocalStorage } from '@vueuse/core'
 
 const collapsed = useLocalStorage('sidebar-collapsed', false)
@@ -53,6 +53,7 @@ function toggle() {
 const navItems = [
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
   { to: '/wiki', icon: Library, label: 'Wiki' },
+  { to: '/log', icon: ScrollText, label: 'Journal' },
   { to: '/ingest', icon: Upload, label: 'Ingest' },
 ]
 </script>

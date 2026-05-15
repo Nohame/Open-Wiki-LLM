@@ -32,6 +32,12 @@ export interface IngestResult {
   wiki_path: string
   title: string
   pages_updated: string[]
+  concepts_created: string[]
+  entities_created: string[]
+}
+
+export interface LogResponse {
+  content: string
 }
 
 export type AnswerMode = 'validated_only' | 'strict' | 'draft' | 'source_only'

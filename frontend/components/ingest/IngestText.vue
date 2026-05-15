@@ -37,6 +37,8 @@
     <div v-if="result" class="p-3 bg-green-900/30 border border-green-700 rounded-lg space-y-1">
       <p class="text-green-400 text-sm font-medium">✓ {{ result.slug }} créé</p>
       <p v-for="s in result.pages_updated" :key="s" class="text-blue-300 text-xs">↻ {{ s }} mis à jour</p>
+      <p v-for="s in result.concepts_created" :key="s" class="text-purple-300 text-xs">+ {{ s }}</p>
+      <p v-for="s in result.entities_created" :key="s" class="text-yellow-300 text-xs">+ {{ s }}</p>
       <NuxtLink :to="`/wiki/${result.slug}`" class="text-blue-400 text-xs hover:underline">
         Voir la page →
       </NuxtLink>
