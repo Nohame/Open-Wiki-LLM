@@ -13,3 +13,5 @@ class IngestResult(BaseModel):
     wiki_path: str
     title: str
     pages_updated: list[str] = []
+    concepts_created: list[str] = []
+    entities_created: list[str] = []

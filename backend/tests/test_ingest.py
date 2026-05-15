@@ -30,6 +30,24 @@ Contenu structuré par Ollama.
 
 MOCK_XML = f'<page slug="imports--test-ingestion">{MOCK_MARKDOWN}</page>'
 
+CONCEPT_MARKDOWN = """\
+---
+title: Groove
+type: concept
+status: draft
+confidence: medium
+sources: []
+updated_at: 2026-05-15
+tags: []
+---
+
+# Groove
+
+## Résumé
+
+Outil de gestion tickets.
+"""
+
 
 @pytest.fixture
 def client_with_dirs(monkeypatch):
@@ -56,6 +74,8 @@ def test_ingest_text_creates_files(client_with_dirs):
     assert Path(data["raw_path"]).exists()
     assert Path(data["wiki_path"]).exists()
     assert data["pages_updated"] == []
+    assert data["concepts_created"] == []
+    assert data["entities_created"] == []
 
 
 def test_ingest_text_without_title(client_with_dirs):
@@ -91,6 +111,8 @@ def test_ingest_text_multi_page(client_with_dirs):
     assert response.status_code == 200
     data = response.json()
     assert data["pages_updated"] == ["imports--existing"]
+    assert data["concepts_created"] == []
+    assert data["entities_created"] == []
     assert Path(wiki_tmp, "index.md").exists()
 
 
@@ -104,6 +126,27 @@ def test_ingest_text_no_related(client_with_dirs):
     assert response.status_code == 200
     data = response.json()
     assert data["pages_updated"] == []
+    assert data["concepts_created"] == []
+    assert data["entities_created"] == []
+
+
+def test_ingest_text_with_concepts(client_with_dirs):
+    xml_with_concept = (
+        f'<page slug="imports--test-ingestion">{MOCK_MARKDOWN}</page>\n'
+        f'<page slug="concept--groove">{CONCEPT_MARKDOWN}</page>'
+    )
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=xml_with_concept)):
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "On utilise Groove pour les tickets.", "title": "Test Ingestion", "tags": ["test"]},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["concepts_created"] == ["concept--groove"]
+    assert data["entities_created"] == []
+    assert data["pages_updated"] == []
+    assert Path(settings.wiki_path, "concept", "groove.md").exists()
 
 
 def test_ingest_file_endpoint_txt(client_with_dirs):

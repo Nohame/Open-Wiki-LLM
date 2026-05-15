@@ -1,4 +1,5 @@
 import re
+import time
 from pathlib import Path
 from datetime import date
 from .ollama_service import compile_image_to_markdown, identify_related_pages, compile_multi_page
@@ -14,6 +15,7 @@ def _slugify(title: str) -> str:
 
 
 async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
+    start = time.monotonic()
     today = date.today().isoformat()
     effective_title = title or "Source sans titre"
     slug = _slugify(effective_title)
@@ -36,12 +38,19 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     updates = wiki_manager.parse_xml_updates(xml_output)
     written_slugs = wiki_manager.apply_updates(updates)
 
+    concepts_created = [s for s in written_slugs if s.startswith("concept--")]
+    entities_created = [s for s in written_slugs if s.startswith("entity--")]
+    pages_updated = [s for s in written_slugs if s.startswith("imports--") and s != new_slug]
+
     wiki_manager.rebuild_index_file()
-    pages_updated = [s for s in written_slugs if s != new_slug]
+    duration_s = round(time.monotonic() - start)
     wiki_manager.append_log(
         f"## [{today}] ingest | {slug}\n"
-        f"- Pages créées : {new_slug}\n"
-        f"- Pages mises à jour : {', '.join(pages_updated) or '—'}\n"
+        f"- Source : {new_slug}\n"
+        f"- Concepts : {', '.join(concepts_created) or '—'}\n"
+        f"- Entités : {', '.join(entities_created) or '—'}\n"
+        f"- Tags : {', '.join(tags) or '—'}\n"
+        f"- Durée : {duration_s}s\n"
     )
 
     rebuild_index()
@@ -53,6 +62,8 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
         "wiki_path": str(wiki_path),
         "title": effective_title,
         "pages_updated": pages_updated,
+        "concepts_created": concepts_created,
+        "entities_created": entities_created,
     }
 
 
@@ -78,4 +89,6 @@ async def ingest_image(image_bytes: bytes, filename: str, title: str | None, tag
         "wiki_path": str(wiki_path),
         "title": effective_title,
         "pages_updated": [],
+        "concepts_created": [],
+        "entities_created": [],
     }
