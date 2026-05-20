@@ -23,6 +23,10 @@ class SearchIndex:
                     PRIMARY KEY (page_slug, source_slug)
                 )
             """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_page_references_source
+                ON page_references(source_slug)
+            """)
 
     def index_page(self, slug: str, title: str, content: str, tags: str) -> None:
         with self._connect() as conn:
