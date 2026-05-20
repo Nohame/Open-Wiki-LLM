@@ -29,7 +29,7 @@ export function useApi() {
     return $fetch<T>(`${baseUrl}${path}`, {
       method: 'POST',
       headers: headers({ 'Content-Type': 'application/json' }),
-      body,
+      body: body as Record<string, unknown>,
       onResponseError,
     })
   }
@@ -43,5 +43,14 @@ export function useApi() {
     })
   }
 
-  return { get, post, postForm }
+  async function patch<T>(path: string, body: unknown): Promise<T> {
+    return $fetch<T>(`${baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: headers({ 'Content-Type': 'application/json' }),
+      body: body as Record<string, unknown>,
+      onResponseError,
+    })
+  }
+
+  return { get, post, postForm, patch }
 }

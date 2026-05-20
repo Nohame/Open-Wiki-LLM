@@ -11,4 +11,9 @@ class WikiPage(BaseModel):
     sources: list[str] = []
     updated_at: str = ""
     tags: list[str] = []
+    stale: bool = False
     content: str
+
+
+class StaleUpdate(BaseModel):
+    stale: bool

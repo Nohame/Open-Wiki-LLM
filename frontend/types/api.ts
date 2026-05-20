@@ -11,6 +11,7 @@ export interface WikiPageSummary {
 
 export interface WikiPage extends WikiPageSummary {
   content: string
+  stale: boolean
 }
 
 export interface SearchResult {
@@ -34,6 +35,13 @@ export interface IngestResult {
   pages_updated: string[]
   concepts_created: string[]
   entities_created: string[]
+  stale_marked: string[]
+}
+
+export interface PageReferences {
+  slug: string
+  references: string[]
+  referenced_by: string[]
 }
 
 export interface LogResponse {

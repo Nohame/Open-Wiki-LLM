@@ -15,3 +15,4 @@ class IngestResult(BaseModel):
     pages_updated: list[str] = []
     concepts_created: list[str] = []
     entities_created: list[str] = []
+    stale_marked: list[str] = []

@@ -18,6 +18,7 @@ def load_page(file_path: Path, wiki_path: Path) -> WikiPage:
         sources=post.metadata.get("sources", []),
         updated_at=str(post.metadata.get("updated_at", "")),
         tags=post.metadata.get("tags", []),
+        stale=bool(post.metadata.get("stale", False)),
         content=post.content,
     )
 
