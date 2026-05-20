@@ -6,6 +6,7 @@ from .api.search import router as search_router
 from .api.ingest import router as ingest_router
 from .api.answer import router as answer_router
 from .api.log import router as log_router
+from .api.references import router as references_router
 from .mcp.server import mcp
 
 app = FastAPI(title="OpenWikiLLM", version="0.1.0")
@@ -23,4 +24,5 @@ app.include_router(search_router)
 app.include_router(ingest_router)
 app.include_router(answer_router)
 app.include_router(log_router)
+app.include_router(references_router)
 app.mount("/mcp", mcp.http_app())
