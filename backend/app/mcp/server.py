@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
 from ..services.wiki_service import list_pages, get_page
 from ..services.search_service import search, rebuild_index
+from ..services import reference_service
 
 mcp = FastMCP("openwikillm")
 
@@ -32,3 +33,20 @@ def wiki_rebuild_index() -> dict:
     """Reconstruit l'index de recherche FTS5."""
     count = rebuild_index()
     return {"indexed": count}
+
+
+@mcp.tool()
+def wiki_list_stale() -> list[dict]:
+    """Liste toutes les pages wiki marquées comme obsolètes (stale: true)."""
+    slugs = reference_service.get_stale_pages()
+    return [{"slug": s} for s in slugs]
+
+
+@mcp.tool()
+def wiki_list_references(slug: str) -> dict:
+    """
+    Retourne les références d'une page wiki :
+    - references : sources[] dont dépend cette page
+    - referenced_by : pages qui dépendent de ce slug
+    """
+    return reference_service.get_references(slug)

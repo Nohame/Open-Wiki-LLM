@@ -6,6 +6,55 @@ from app.mcp.server import wiki_list_pages, wiki_read_page, wiki_search, wiki_re
 from app.core.config import settings
 
 
+@pytest.fixture
+def wiki_env(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path / "wiki"))
+    monkeypatch.setattr(settings, "data_path", str(data_dir))
+    Path(settings.wiki_path).mkdir(parents=True, exist_ok=True)
+    from app.storage.search import SearchIndex
+    SearchIndex(data_dir / "openwikillm.db")
+    return tmp_path
+
+
+def test_wiki_list_stale_empty(wiki_env):
+    from app.mcp.server import wiki_list_stale
+    result = wiki_list_stale()
+    assert result == []
+
+
+def test_wiki_list_stale_with_stale_page(wiki_env):
+    p = Path(settings.wiki_path) / "concept" / "old.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("---\ntitle: Old\nstale: true\n---\n\n# Old\n", encoding="utf-8")
+    from app.mcp.server import wiki_list_stale
+    result = wiki_list_stale()
+    assert any(r["slug"] == "concept--old" for r in result)
+
+
+def test_wiki_list_references_unknown_slug(wiki_env):
+    from app.services.reference_service import rebuild_references
+    rebuild_references()
+    from app.mcp.server import wiki_list_references
+    result = wiki_list_references("concept--unknown")
+    assert result == {"references": [], "referenced_by": []}
+
+
+def test_wiki_list_references_with_source(wiki_env):
+    p = Path(settings.wiki_path) / "concept" / "groove.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        "---\ntitle: Groove\nsources:\n  - imports--ticket-doc\n---\n\n# Groove\n",
+        encoding="utf-8",
+    )
+    from app.services.reference_service import rebuild_references
+    rebuild_references()
+    from app.mcp.server import wiki_list_references
+    result = wiki_list_references("concept--groove")
+    assert "imports--ticket-doc" in result["references"]
+
+
 @pytest.fixture(autouse=True)
 def wiki_and_data(monkeypatch):
     with tempfile.TemporaryDirectory() as wiki_tmp, \

@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from datetime import date
 from .ollama_service import compile_image_to_markdown, identify_related_pages, compile_multi_page
-from . import wiki_manager, schema_service
+from . import wiki_manager, schema_service, reference_service
 from .search_service import rebuild_index
 from ..core.config import settings
 
@@ -50,6 +50,22 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     wiki_manager.rebuild_index_file()
     rebuild_index()
 
+    # Clear stale sur les pages mises à jour par le LLM
+    for s in written_slugs:
+        wiki_manager.set_stale(s, False)
+
+    # Rebuild graph de références
+    reference_service.rebuild_references()
+
+    # Marquer stale les pages dépendantes non mises à jour
+    stale_marked: list[str] = []
+    for source_slug in written_slugs:
+        refs = reference_service.get_references(source_slug)
+        for dependent_slug in refs["referenced_by"]:
+            if dependent_slug not in written_slugs and dependent_slug not in stale_marked:
+                wiki_manager.set_stale(dependent_slug, True)
+                stale_marked.append(dependent_slug)
+
     wiki_path = Path(settings.wiki_path) / "imports" / f"{slug}.md"
     duration_s = round(time.monotonic() - start)
     wiki_manager.append_log(
@@ -69,6 +85,7 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
         "pages_updated": pages_updated,
         "concepts_created": concepts_created,
         "entities_created": entities_created,
+        "stale_marked": stale_marked,
     }
 
 
@@ -97,4 +114,5 @@ async def ingest_image(image_bytes: bytes, filename: str, title: str | None, tag
         "pages_updated": [],
         "concepts_created": [],
         "entities_created": [],
+        "stale_marked": [],
     }

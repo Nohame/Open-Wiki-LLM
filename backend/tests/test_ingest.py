@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.config import settings
+from app.storage.wiki import load_page
 
 MOCK_MARKDOWN = """\
 ---
@@ -94,6 +95,7 @@ def test_ingest_text_creates_files(client_with_dirs):
     assert data["pages_updated"] == []
     assert data["concepts_created"] == []
     assert data["entities_created"] == []
+    assert data["stale_marked"] == []
 
 
 def test_ingest_text_without_title(client_with_dirs):
@@ -131,6 +133,7 @@ def test_ingest_text_multi_page(client_with_dirs):
     assert data["pages_updated"] == ["imports--existing"]
     assert data["concepts_created"] == []
     assert data["entities_created"] == []
+    assert data["stale_marked"] == []
     assert Path(wiki_tmp, "index.md").exists()
 
 
@@ -146,6 +149,7 @@ def test_ingest_text_no_related(client_with_dirs):
     assert data["pages_updated"] == []
     assert data["concepts_created"] == []
     assert data["entities_created"] == []
+    assert data["stale_marked"] == []
 
 
 def test_ingest_text_with_concepts(client_with_dirs):
@@ -164,6 +168,7 @@ def test_ingest_text_with_concepts(client_with_dirs):
     assert data["concepts_created"] == ["concept--groove"]
     assert data["entities_created"] == []
     assert data["pages_updated"] == []
+    assert data["stale_marked"] == []
     assert Path(settings.wiki_path, "concept", "groove.md").exists()
 
 
@@ -183,6 +188,7 @@ def test_ingest_text_with_entities(client_with_dirs):
     assert data["entities_created"] == ["entity--alizee"]
     assert data["concepts_created"] == []
     assert data["pages_updated"] == []
+    assert data["stale_marked"] == []
     assert Path(settings.wiki_path, "entity", "alizee.md").exists()
 
 
@@ -239,3 +245,55 @@ def test_ingest_file_endpoint_extract_error(client_with_dirs):
         )
     assert response.status_code == 422
     assert "PDF illisible" in response.json()["detail"]
+
+
+def test_ingest_marks_dependents_stale(client_with_dirs):
+    """Page B a sources: [imports--test-ingestion] et n'est pas mise à jour → stale=True"""
+    wiki_tmp = settings.wiki_path
+    # Créer la page dépendante
+    p = Path(wiki_tmp, "concept", "dependent.md")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        "---\ntitle: Dependent\ntype: concept\nsources:\n  - imports--test-ingestion\n---\n\n# Dependent\n",
+        encoding="utf-8",
+    )
+    # Ingest de imports--test-ingestion sans mise à jour de concept--dependent
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=MOCK_XML)):
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "Texte source.", "title": "Test Ingestion", "tags": []},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert "concept--dependent" in data["stale_marked"]
+    # Vérifier que le frontmatter a été mis à jour sur disque
+    page = load_page(Path(wiki_tmp, "concept", "dependent.md"), Path(wiki_tmp))
+    assert page.stale is True
+
+
+def test_ingest_clears_stale_on_updated(client_with_dirs):
+    """Page mis à jour par le LLM → stale doit être effacé"""
+    wiki_tmp = settings.wiki_path
+    # Créer concept--groove déjà stale
+    p = Path(wiki_tmp, "concept", "groove.md")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        "---\ntitle: Groove\ntype: concept\nstale: true\n---\n\n# Groove\n",
+        encoding="utf-8",
+    )
+    # Ingest qui met à jour concept--groove
+    xml_updates_groove = (
+        f'<page slug="imports--test-ingestion">{MOCK_MARKDOWN}</page>\n'
+        f'<page slug="concept--groove">{CONCEPT_MARKDOWN}</page>'
+    )
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=xml_updates_groove)):
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "Groove tickets.", "title": "Test Ingestion", "tags": []},
+        )
+    assert response.status_code == 200
+    # concept--groove a été mis à jour → stale doit être False
+    page = load_page(Path(wiki_tmp, "concept", "groove.md"), Path(wiki_tmp))
+    assert page.stale is False
