@@ -19,6 +19,7 @@ vi.mock('~/composables/useApi', () => ({
       { slug: 'imports--livraison', title: 'Livraison 24h', snippet: 'délai 24h', score: 1.5 },
     ]),
     postForm: vi.fn(),
+    patch: vi.fn().mockResolvedValue({}),
   }),
 }))
 

@@ -10,6 +10,7 @@ vi.mock('~/composables/useApi', () => ({
     }),
     get: vi.fn(),
     postForm: vi.fn(),
+    patch: vi.fn().mockResolvedValue({}),
   }),
 }))
 

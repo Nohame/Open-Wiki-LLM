@@ -9,6 +9,24 @@
         <h1 class="text-xl font-bold text-white">{{ currentPage?.title }}</h1>
       </div>
 
+      <!-- Badge Obsolète -->
+      <div
+        v-if="currentPage?.stale"
+        class="flex items-center gap-3 p-3 bg-red-900/30 border border-red-700 rounded-lg"
+      >
+        <span class="text-red-400 text-sm font-medium">⚠ Page obsolète</span>
+        <span class="text-red-300 text-xs flex-1">
+          Une source a été mise à jour depuis la dernière révision de cette page.
+        </span>
+        <button
+          class="text-xs text-red-300 hover:text-white underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="markingCurrent"
+          @click="markAsCurrent"
+        >
+          {{ markingCurrent ? '…' : 'Marquer comme à jour' }}
+        </button>
+      </div>
+
       <div v-if="loading" class="text-gray-400 text-sm">Chargement...</div>
       <div v-else-if="error" class="text-red-400 text-sm">{{ error }}</div>
       <MarkdownViewer v-else-if="currentPage" :content="currentPage.content" />
@@ -83,6 +101,21 @@ import { ArrowLeft } from 'lucide-vue-next'
 
 const route = useRoute()
 const { currentPage, loading, error, fetchPage } = useWiki()
+const { patch } = useApi()
+const markingCurrent = ref(false)
+
+async function markAsCurrent() {
+  if (!currentPage.value) return
+  markingCurrent.value = true
+  try {
+    await patch(`/api/pages/${currentPage.value.slug}/stale`, { stale: false })
+    await fetchPage(currentPage.value.slug)
+  } catch {
+    error.value = 'Impossible de mettre à jour le statut.'
+  } finally {
+    markingCurrent.value = false
+  }
+}
 
 onMounted(() => fetchPage(route.params.slug as string))
 </script>
