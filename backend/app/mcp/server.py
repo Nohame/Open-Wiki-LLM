@@ -107,3 +107,10 @@ def wiki_write(
     rebuild_index()
     reference_service.rebuild_references()
     return {"slug": slug, "written": True}
+
+
+@mcp.tool()
+def wiki_delete(slug: str) -> dict:
+    """Marque une page wiki comme dépréciée (status: deprecated). La page reste sur le disque."""
+    deprecated = wiki_manager.set_deprecated(slug)
+    return {"slug": slug, "deprecated": deprecated}

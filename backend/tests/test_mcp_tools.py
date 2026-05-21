@@ -178,3 +178,20 @@ def test_wiki_write_preserves_sources_on_update(wiki_env):
     wiki_write(slug="imports--src", title="Source Updated", content="New content.")
     post = fm.load(str(existing / "src.md"))
     assert "raw/imports/foo.md" in post.metadata.get("sources", [])
+
+
+def test_wiki_delete_marks_page_deprecated(wiki_env):
+    p = Path(settings.wiki_path) / "concept" / "to-deprecate.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("---\ntitle: À déprécier\nstatus: validated\n---\n\n# À déprécier\n", encoding="utf-8")
+    from app.mcp.server import wiki_delete
+    result = wiki_delete("concept--to-deprecate")
+    assert result == {"slug": "concept--to-deprecate", "deprecated": True}
+    post = fm.load(str(p))
+    assert post.metadata["status"] == "deprecated"
+
+
+def test_wiki_delete_unknown_slug_returns_false(wiki_env):
+    from app.mcp.server import wiki_delete
+    result = wiki_delete("concept--inexistant")
+    assert result == {"slug": "concept--inexistant", "deprecated": False}
