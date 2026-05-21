@@ -1,3 +1,4 @@
+import re
 from datetime import date
 import frontmatter as fm
 from fastmcp import FastMCP
@@ -6,6 +7,8 @@ from ..services.search_service import search, rebuild_index
 from ..services import reference_service, wiki_manager
 
 mcp = FastMCP("openwikillm")
+
+_SLUG_RE = re.compile(r'^[a-z0-9][a-z0-9-]*(?:--[a-z0-9][a-z0-9-]*)?$')
 
 
 @mcp.tool()
@@ -76,6 +79,8 @@ def wiki_write(
     confidence: str = "medium",
 ) -> dict:
     """Crée ou met à jour une page wiki. Le backend assemble le frontmatter YAML automatiquement."""
+    if not _SLUG_RE.match(slug):
+        return {"slug": slug, "written": False, "error": "format de slug invalide"}
     if page_type not in _VALID_TYPES:
         return {"slug": slug, "written": False, "error": f"type invalide: {page_type}"}
     if status not in _VALID_STATUSES:
@@ -84,14 +89,7 @@ def wiki_write(
         return {"slug": slug, "written": False, "error": f"confidence invalide: {confidence}"}
 
     # Preserve existing sources on update
-    existing_sources: list[str] = []
-    existing_path = wiki_manager._slug_to_path(slug)
-    if existing_path.exists():
-        try:
-            existing_post = fm.load(str(existing_path))
-            existing_sources = existing_post.metadata.get("sources") or []
-        except Exception:
-            existing_sources = []
+    existing_sources = wiki_manager.get_existing_sources(slug)
 
     post = fm.Post(
         content,
@@ -103,14 +101,22 @@ def wiki_write(
         sources=existing_sources,
         updated_at=date.today().isoformat(),
     )
-    wiki_manager.apply_updates({slug: fm.dumps(post)})
-    rebuild_index()
-    reference_service.rebuild_references()
+    try:
+        wiki_manager.apply_updates({slug: fm.dumps(post)})
+        rebuild_index()
+        reference_service.rebuild_references()
+    except Exception as e:
+        return {"slug": slug, "written": False, "error": str(e)}
     return {"slug": slug, "written": True}
 
 
 @mcp.tool()
 def wiki_delete(slug: str) -> dict:
     """Marque une page wiki comme dépréciée (status: deprecated). La page reste sur le disque."""
+    if not _SLUG_RE.match(slug):
+        return {"slug": slug, "deprecated": False, "error": "format de slug invalide"}
     deprecated = wiki_manager.set_deprecated(slug)
+    if deprecated:
+        rebuild_index()
+        reference_service.rebuild_references()
     return {"slug": slug, "deprecated": deprecated}

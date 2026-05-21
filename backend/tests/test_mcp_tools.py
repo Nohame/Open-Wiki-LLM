@@ -195,3 +195,17 @@ def test_wiki_delete_unknown_slug_returns_false(wiki_env):
     from app.mcp.server import wiki_delete
     result = wiki_delete("concept--inexistant")
     assert result == {"slug": "concept--inexistant", "deprecated": False}
+
+
+def test_wiki_write_invalid_slug_format(wiki_env):
+    from app.mcp.server import wiki_write
+    result = wiki_write(slug="../../etc/passwd", title="X", content="body")
+    assert result["written"] is False
+    assert "error" in result
+
+
+def test_wiki_delete_invalid_slug_format(wiki_env):
+    from app.mcp.server import wiki_delete
+    result = wiki_delete("../../etc/passwd")
+    assert result["deprecated"] is False
+    assert "error" in result

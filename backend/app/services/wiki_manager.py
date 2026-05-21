@@ -15,6 +15,21 @@ def _slug_to_path(slug: str) -> Path:
     return Path(settings.wiki_path) / f"{slug}.md"
 
 
+def page_exists(slug: str) -> bool:
+    return _slug_to_path(slug).exists()
+
+
+def get_existing_sources(slug: str) -> list[str]:
+    path = _slug_to_path(slug)
+    if not path.exists():
+        return []
+    try:
+        post = fm.load(str(path))
+        return post.metadata.get("sources") or []
+    except Exception:
+        return []
+
+
 def set_stale(slug: str, stale: bool) -> None:
     path = _slug_to_path(slug)
     if not path.exists():
