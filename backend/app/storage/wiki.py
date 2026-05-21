@@ -1,6 +1,9 @@
+import logging
 from pathlib import Path
 import frontmatter
 from ..models.page import WikiPage
+
+logger = logging.getLogger(__name__)
 
 
 def _path_to_slug(wiki_path: Path, file_path: Path) -> str:
@@ -28,7 +31,10 @@ def list_pages(wiki_path: Path) -> list[WikiPage]:
     for file_path in sorted(wiki_path.rglob("*.md")):
         if file_path.name == "index.md":
             continue
-        pages.append(load_page(file_path, wiki_path))
+        try:
+            pages.append(load_page(file_path, wiki_path))
+        except Exception as e:
+            logger.warning("Skipping malformed page %s: %s", file_path, e)
     return pages
 
 

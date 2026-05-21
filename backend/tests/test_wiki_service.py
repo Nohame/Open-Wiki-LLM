@@ -50,3 +50,13 @@ def test_get_page_found(wiki_dir):
 def test_get_page_not_found(wiki_dir):
     page = get_page("nonexistent", wiki_dir)
     assert page is None
+
+
+def test_list_pages_skips_invalid_type(wiki_dir):
+    """list_pages doit ignorer les pages dont le type n'est pas dans le Literal autorisé."""
+    bad = wiki_dir / "bad-type.md"
+    bad.write_text("---\ntitle: Bad\ntype: source\nstatus: draft\n---\nContenu.")
+    pages = list_pages(wiki_dir)
+    slugs = [p.slug for p in pages]
+    assert "bad-type" not in slugs
+    assert len(pages) == 1  # seule la page valide du fixture
