@@ -94,3 +94,13 @@ def test_set_deprecated_unknown_slug_returns_false(tmp_path, monkeypatch):
     from app.services.wiki_manager import set_deprecated
     result = set_deprecated("concept--unknown")
     assert result is False
+
+
+def test_set_deprecated_malformed_frontmatter(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    p = tmp_path / "concept" / "broken.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("---\ntitle: [broken yaml\n---\n\n# Broken\n", encoding="utf-8")
+    from app.services.wiki_manager import set_deprecated
+    result = set_deprecated("concept--broken")
+    assert result is False
