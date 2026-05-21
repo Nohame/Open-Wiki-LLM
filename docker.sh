@@ -25,8 +25,16 @@ case "$1" in
       *)     docker compose logs -f ;;
     esac
     ;;
+  build)
+    case "$2" in
+      api)   docker compose build openwikillm-api ;;
+      front) docker compose build frontend ;;
+      *)     docker compose build ;;
+    esac
+    docker compose up -d
+    ;;
   *)
-    echo "Usage: ./docker.sh {start|stop|restart|ssh|logs [api|front]}"
+    echo "Usage: ./docker.sh {start|stop|restart|ssh|logs [api|front]|build [api|front]}"
     exit 1
     ;;
 esac
