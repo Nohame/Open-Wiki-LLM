@@ -7,6 +7,8 @@ from . import wiki_manager, schema_service, reference_service
 from .search_service import rebuild_index
 from ..core.config import settings
 
+MAX_TEXT_CHARS = 30_000
+
 
 def _slugify(title: str) -> str:
     slug = title.lower()
@@ -18,6 +20,7 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     start = time.monotonic()
     today = date.today().isoformat()
     effective_title = title or "Source sans titre"
+    text = text[:MAX_TEXT_CHARS]
     slug = _slugify(effective_title)
     new_slug = f"imports--{slug}"
 

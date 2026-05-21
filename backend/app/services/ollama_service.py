@@ -135,7 +135,7 @@ async def compile_image_to_markdown(
         tags=json.dumps(tags, ensure_ascii=False),
         date=date,
     )
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(
             f"{settings.ollama_base_url}/api/generate",
             json={
@@ -156,7 +156,7 @@ async def compile_to_markdown(text: str, title: str, tags: list[str], date: str)
         tags=json.dumps(tags, ensure_ascii=False),
         date=date,
     )
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(
             f"{settings.ollama_base_url}/api/generate",
             json={
@@ -175,7 +175,7 @@ async def identify_related_pages(text: str, title: str, index_content: str) -> l
         text=text,
         index=index_content or "(index vide)",
     )
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(
             f"{settings.ollama_base_url}/api/generate",
             json={"model": settings.ollama_model, "prompt": prompt, "stream": False},
@@ -214,7 +214,7 @@ async def compile_multi_page(
         related_pages=pages_block,
         new_slug=new_slug,
     )
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(
             f"{settings.ollama_base_url}/api/generate",
             json={"model": settings.ollama_model, "prompt": prompt, "stream": False},

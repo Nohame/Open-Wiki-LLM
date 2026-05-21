@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from ..core.auth import verify_api_key
@@ -23,9 +24,21 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 router = APIRouter(prefix="/api", dependencies=[Depends(verify_api_key)])
 
 
+def _handle_ollama_error(exc: httpx.HTTPError) -> None:
+    if isinstance(exc, httpx.ReadTimeout):
+        raise HTTPException(
+            status_code=504,
+            detail="Ollama n'a pas répondu à temps. Le fichier est peut-être trop volumineux.",
+        )
+    raise HTTPException(status_code=502, detail=f"Erreur Ollama : {exc}")
+
+
 @router.post("/ingest/text", response_model=IngestResult)
 async def ingest_text_endpoint(request: IngestTextRequest) -> IngestResult:
-    result = await ingest_text(request.text, request.title, request.tags)
+    try:
+        result = await ingest_text(request.text, request.title, request.tags)
+    except httpx.HTTPError as exc:
+        _handle_ollama_error(exc)
     return IngestResult(**result)
 
 
@@ -42,7 +55,10 @@ async def ingest_image_endpoint(
         )
     image_bytes = await file.read()
     tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
-    result = await ingest_image(image_bytes, file.filename or "image.png", title, tag_list)
+    try:
+        result = await ingest_image(image_bytes, file.filename or "image.png", title, tag_list)
+    except httpx.HTTPError as exc:
+        _handle_ollama_error(exc)
     return IngestResult(**result)
 
 
@@ -69,5 +85,8 @@ async def ingest_file_endpoint(
         raise HTTPException(status_code=422, detail="Aucun texte extractible")
     effective_title = title or Path(file.filename or "").stem
     tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
-    result = await ingest_text(text, effective_title, tag_list)
+    try:
+        result = await ingest_text(text, effective_title, tag_list)
+    except httpx.HTTPError as exc:
+        _handle_ollama_error(exc)
     return IngestResult(**result)

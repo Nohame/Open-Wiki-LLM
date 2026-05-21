@@ -2,6 +2,7 @@ import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
+import httpx
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.config import settings
@@ -270,6 +271,38 @@ def test_ingest_marks_dependents_stale(client_with_dirs):
     # Vérifier que le frontmatter a été mis à jour sur disque
     page = load_page(Path(wiki_tmp, "concept", "dependent.md"), Path(wiki_tmp))
     assert page.stale is True
+
+
+def test_ingest_text_truncates_large_input(client_with_dirs):
+    """Un texte dépassant MAX_TEXT_CHARS doit être tronqué avant envoi à Ollama."""
+    from app.services import ingest_service
+    large_text = "A" * (ingest_service.MAX_TEXT_CHARS + 10_000)
+    captured = {}
+
+    async def fake_compile(text, *args, **kwargs):
+        captured["text"] = text
+        return MOCK_XML
+
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(side_effect=fake_compile)):
+        client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": large_text, "title": "Test", "tags": []},
+        )
+    assert len(captured["text"]) == ingest_service.MAX_TEXT_CHARS
+
+
+def test_ingest_file_ollama_timeout_returns_504(client_with_dirs):
+    """Un timeout Ollama doit retourner 504, pas 500."""
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page",
+               new=AsyncMock(side_effect=httpx.ReadTimeout("timeout"))):
+        response = client_with_dirs.post(
+            "/api/ingest/file",
+            files={"file": ("doc.txt", b"Contenu.", "text/plain")},
+        )
+    assert response.status_code == 504
+    assert "Ollama" in response.json()["detail"]
 
 
 def test_ingest_clears_stale_on_updated(client_with_dirs):
