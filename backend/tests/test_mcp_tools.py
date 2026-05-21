@@ -102,3 +102,17 @@ def test_wiki_rebuild_and_search():
     results = wiki_search("test")
     assert len(results) >= 1
     assert results[0]["slug"] == "concepts--test"
+
+
+def test_wiki_guide_empty(wiki_env):
+    from app.mcp.server import wiki_guide
+    result = wiki_guide()
+    assert result == ""
+
+
+def test_wiki_guide_returns_index_content(wiki_env):
+    from app.mcp.server import wiki_guide
+    index_path = Path(settings.wiki_path) / "index.md"
+    index_path.write_text("# Index du wiki\n\n## concept\n", encoding="utf-8")
+    result = wiki_guide()
+    assert "# Index du wiki" in result

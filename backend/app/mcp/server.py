@@ -1,7 +1,7 @@
 from fastmcp import FastMCP
 from ..services.wiki_service import list_pages, get_page
 from ..services.search_service import search, rebuild_index
-from ..services import reference_service
+from ..services import reference_service, wiki_manager
 
 mcp = FastMCP("openwikillm")
 
@@ -50,3 +50,9 @@ def wiki_list_references(slug: str) -> dict:
     - referenced_by : pages qui dépendent de ce slug
     """
     return reference_service.get_references(slug)
+
+
+@mcp.tool()
+def wiki_guide() -> str:
+    """Retourne l'index structuré du wiki : catégories, slugs disponibles et résumés."""
+    return wiki_manager.load_index()
