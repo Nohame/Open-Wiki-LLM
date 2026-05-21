@@ -128,3 +128,22 @@ def test_load_log_present(tmp_path, monkeypatch):
     (tmp_path / "log.md").write_text("# Journal\n\n## test", encoding="utf-8")
     from app.services.wiki_manager import load_log
     assert load_log() == "# Journal\n\n## test"
+
+
+def test_delete_page_removes_file(tmp_path, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    (tmp_path / "imports").mkdir()
+    (tmp_path / "imports" / "foo.md").write_text("---\ntitle: Foo\n---\nContenu.")
+    from app.services.wiki_manager import delete_page
+    result = delete_page("imports--foo")
+    assert result is True
+    assert not (tmp_path / "imports" / "foo.md").exists()
+
+
+def test_delete_page_missing_slug(tmp_path, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    from app.services.wiki_manager import delete_page
+    result = delete_page("imports--inexistant")
+    assert result is False

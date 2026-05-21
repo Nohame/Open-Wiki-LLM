@@ -53,3 +53,20 @@ def test_api_requires_key_when_set(monkeypatch):
     client = TestClient(app)
     response = client.get("/api/pages")
     assert response.status_code == 401
+
+
+def test_delete_page(client_with_wiki):
+    response = client_with_wiki.delete("/api/pages/concepts--livraison")
+    assert response.status_code == 204
+
+
+def test_delete_page_not_found(client_with_wiki):
+    response = client_with_wiki.delete("/api/pages/nonexistent--page")
+    assert response.status_code == 404
+
+
+def test_delete_page_removes_from_list(client_with_wiki):
+    client_with_wiki.delete("/api/pages/concepts--livraison")
+    response = client_with_wiki.get("/api/pages")
+    assert response.status_code == 200
+    assert len(response.json()) == 0

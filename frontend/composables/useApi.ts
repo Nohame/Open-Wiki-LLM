@@ -52,5 +52,13 @@ export function useApi() {
     })
   }
 
-  return { get, post, postForm, patch }
+  async function del(path: string): Promise<void> {
+    await $fetch(`${baseUrl}${path}`, {
+      method: 'DELETE',
+      headers: headers(),
+      onResponseError,
+    })
+  }
+
+  return { get, post, postForm, patch, del }
 }

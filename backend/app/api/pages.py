@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Response
 from ..services.wiki_service import list_pages, get_page
 from ..services import wiki_manager
 from ..models.page import WikiPage, StaleUpdate
@@ -18,6 +18,14 @@ def get_page_by_slug(slug: str) -> WikiPage:
     if page is None:
         raise HTTPException(status_code=404, detail="Page not found")
     return page
+
+
+@router.delete("/pages/{slug}", status_code=204)
+def delete_page(slug: str) -> Response:
+    deleted = wiki_manager.delete_page(slug)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Page not found")
+    return Response(status_code=204)
 
 
 @router.patch("/pages/{slug}/stale", response_model=WikiPage)

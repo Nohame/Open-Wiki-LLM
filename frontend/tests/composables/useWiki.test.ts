@@ -12,6 +12,8 @@ const mockPage = {
   tags: ['livraison'],
 }
 
+const mockDelete = vi.fn().mockResolvedValue(undefined)
+
 vi.mock('~/composables/useApi', () => ({
   useApi: () => ({
     get: vi.fn().mockResolvedValue([mockPage]),
@@ -20,6 +22,7 @@ vi.mock('~/composables/useApi', () => ({
     ]),
     postForm: vi.fn(),
     patch: vi.fn().mockResolvedValue({}),
+    del: mockDelete,
   }),
 }))
 
@@ -47,5 +50,15 @@ describe('useWiki', () => {
     await search('livraison')
     expect(searchResults.value).toHaveLength(1)
     expect(searchResults.value[0].slug).toBe('imports--livraison')
+  })
+
+  it('deletePage retire la page de la liste', async () => {
+    const { useWiki } = await import('~/composables/useWiki')
+    const { pages, fetchPages, deletePage } = useWiki()
+    await fetchPages()
+    expect(pages.value).toHaveLength(1)
+    await deletePage('imports--livraison')
+    expect(mockDelete).toHaveBeenCalledWith('/api/pages/imports--livraison')
+    expect(pages.value).toHaveLength(0)
   })
 })

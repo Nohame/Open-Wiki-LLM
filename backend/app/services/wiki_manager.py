@@ -59,6 +59,15 @@ def set_deprecated(slug: str) -> bool:
     return True
 
 
+def delete_page(slug: str) -> bool:
+    path = _slug_to_path(slug)
+    if not path.exists():
+        logger.warning("delete_page: slug introuvable : %s", slug)
+        return False
+    path.unlink()
+    return True
+
+
 def load_index() -> str:
     index_path = Path(settings.wiki_path) / "index.md"
     if not index_path.exists():

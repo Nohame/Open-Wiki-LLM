@@ -8,7 +8,7 @@ export function useWiki() {
   const currentPage = ref<WikiPage | null>(null)
   const loading = ref(false)
   const error = ref('')
-  const { get, post } = useApi()
+  const { get, post, del } = useApi()
 
   async function fetchPages() {
     loading.value = true
@@ -50,5 +50,10 @@ export function useWiki() {
     }
   }
 
-  return { pages, searchResults, currentPage, loading, error, fetchPages, search, fetchPage }
+  async function deletePage(slug: string): Promise<void> {
+    await del(`/api/pages/${slug}`)
+    pages.value = pages.value.filter((p) => p.slug !== slug)
+  }
+
+  return { pages, searchResults, currentPage, loading, error, fetchPages, search, fetchPage, deletePage }
 }

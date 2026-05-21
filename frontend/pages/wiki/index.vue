@@ -10,7 +10,7 @@
         {{ displayedPages.length }} page{{ displayedPages.length > 1 ? 's' : '' }}
       </p>
       <div v-if="displayedPages.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <WikiPageCard v-for="page in displayedPages" :key="page.slug" :page="page" />
+        <WikiPageCard v-for="page in displayedPages" :key="page.slug" :page="page" @delete="deletePage" />
       </div>
       <p v-else class="text-gray-400 text-sm">Aucun résultat.</p>
     </div>
@@ -21,7 +21,7 @@
 import { useDebounceFn } from '@vueuse/core'
 import type { WikiPageSummary } from '~/types/api'
 
-const { pages, searchResults, loading, error, fetchPages, search } = useWiki()
+const { pages, searchResults, loading, error, fetchPages, search, deletePage } = useWiki()
 
 const query = ref('')
 
