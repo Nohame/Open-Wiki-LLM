@@ -29,7 +29,7 @@
 
       <div v-if="loading" class="text-gray-400 text-sm">Chargement...</div>
       <div v-else-if="error" class="text-red-400 text-sm">{{ error }}</div>
-      <MarkdownViewer v-else-if="currentPage" :content="currentPage.content" />
+      <WikiMarkdownViewer v-else-if="currentPage" :content="currentPage.content" />
     </div>
 
     <!-- Panel frontmatter -->
