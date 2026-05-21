@@ -116,3 +116,43 @@ def test_wiki_guide_returns_index_content(wiki_env):
     index_path.write_text("# Index du wiki\n\n## concept\n", encoding="utf-8")
     result = wiki_guide()
     assert "# Index du wiki" in result
+
+
+def test_wiki_write_creates_new_page(wiki_env):
+    from app.mcp.server import wiki_write
+    result = wiki_write(
+        slug="imports--test-write",
+        title="Test Write",
+        content="## Résumé\n\nContenu créé par agent.",
+        type="concept",
+        status="draft",
+        tags=["test"],
+        confidence="medium",
+    )
+    assert result == {"slug": "imports--test-write", "written": True}
+    page_path = Path(settings.wiki_path) / "imports" / "test-write.md"
+    assert page_path.exists()
+    post = fm.load(str(page_path))
+    assert post.metadata["title"] == "Test Write"
+    assert post.metadata["status"] == "draft"
+    assert post.metadata["tags"] == ["test"]
+    assert "Contenu créé par agent" in post.content
+
+
+def test_wiki_write_updates_existing_page(wiki_env):
+    existing = Path(settings.wiki_path) / "imports"
+    existing.mkdir(parents=True, exist_ok=True)
+    (existing / "existing.md").write_text(
+        "---\ntitle: Ancien Titre\nstatus: draft\n---\n\n# Ancien\n",
+        encoding="utf-8",
+    )
+    from app.mcp.server import wiki_write
+    result = wiki_write(
+        slug="imports--existing",
+        title="Nouveau Titre",
+        content="## Résumé\n\nContenu mis à jour.",
+    )
+    assert result["written"] is True
+    post = fm.load(str(existing / "existing.md"))
+    assert post.metadata["title"] == "Nouveau Titre"
+    assert "mis à jour" in post.content

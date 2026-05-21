@@ -1,3 +1,5 @@
+from datetime import date
+import frontmatter as fm
 from fastmcp import FastMCP
 from ..services.wiki_service import list_pages, get_page
 from ..services.search_service import search, rebuild_index
@@ -56,3 +58,30 @@ def wiki_list_references(slug: str) -> dict:
 def wiki_guide() -> str:
     """Retourne l'index structuré du wiki : catégories, slugs disponibles et résumés."""
     return wiki_manager.load_index()
+
+
+@mcp.tool()
+def wiki_write(
+    slug: str,
+    title: str,
+    content: str,
+    type: str = "concept",
+    status: str = "draft",
+    tags: list[str] | None = None,
+    confidence: str = "medium",
+) -> dict:
+    """Crée ou met à jour une page wiki. Le backend assemble le frontmatter YAML automatiquement."""
+    post = fm.Post(
+        content,
+        title=title,
+        type=type,
+        status=status,
+        confidence=confidence,
+        tags=tags or [],
+        sources=[],
+        updated_at=date.today().isoformat(),
+    )
+    wiki_manager.apply_updates({slug: fm.dumps(post)})
+    rebuild_index()
+    reference_service.rebuild_references()
+    return {"slug": slug, "written": True}
