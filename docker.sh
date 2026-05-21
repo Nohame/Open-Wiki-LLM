@@ -18,8 +18,15 @@ case "$1" in
   ssh)
     docker compose exec "$SERVICE_NAME" bash
     ;;
+  logs)
+    case "$2" in
+      api)   docker compose logs -f openwikillm-api ;;
+      front) docker compose logs -f frontend ;;
+      *)     docker compose logs -f ;;
+    esac
+    ;;
   *)
-    echo "Usage: ./docker.sh {start|stop|restart|ssh}"
+    echo "Usage: ./docker.sh {start|stop|restart|ssh|logs [api|front]}"
     exit 1
     ;;
 esac
