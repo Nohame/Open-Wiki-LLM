@@ -13,6 +13,7 @@
 - POST /api/search avec sanitisation des requêtes FTS5 (OR, strip special chars)
 - POST /api/index/rebuild
 - Serveur MCP (FastMCP 3.x) monté sur /mcp avec wiki_search, wiki_read_page, wiki_list_pages, wiki_rebuild_index
+- Outils MCP `wiki_guide`, `wiki_write`, `wiki_delete` — découverte, création/MAJ et dépréciation de pages via MCP
 - Ingestion texte via Ollama (configurable via OLLAMA_MODEL) — POST /api/ingest/text
 - Modes strict et validated_only — POST /api/answer
 - Ingestion fichiers (.md, .txt, .pdf, .docx) — POST /api/ingest/file avec extraction texte (pdfplumber, python-docx)

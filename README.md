@@ -164,10 +164,15 @@ http://host.docker.internal:8088/api/answer
 
 | Outil | Description |
 |---|---|
+| `wiki_guide` | Retourne l'index structuré du wiki (catégories, slugs, résumés) |
 | `wiki_search` | Recherche dans le wiki |
 | `wiki_read_page` | Lit le contenu d'une page par slug |
 | `wiki_list_pages` | Liste toutes les pages (sans contenu) |
+| `wiki_write` | Crée ou met à jour une page wiki (champs structurés) |
+| `wiki_delete` | Marque une page comme dépréciée |
 | `wiki_rebuild_index` | Reconstruit l'index FTS5 |
+| `wiki_list_stale` | Liste les pages marquées obsolètes |
+| `wiki_list_references` | Retourne le graphe de références d'une page |
 
 ---
 
