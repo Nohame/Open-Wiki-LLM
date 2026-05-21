@@ -119,12 +119,13 @@ def test_wiki_guide_returns_index_content(wiki_env):
 
 
 def test_wiki_write_creates_new_page(wiki_env):
+    from datetime import date
     from app.mcp.server import wiki_write
     result = wiki_write(
         slug="imports--test-write",
         title="Test Write",
         content="## Résumé\n\nContenu créé par agent.",
-        type="concept",
+        page_type="concept",
         status="draft",
         tags=["test"],
         confidence="medium",
@@ -137,6 +138,7 @@ def test_wiki_write_creates_new_page(wiki_env):
     assert post.metadata["status"] == "draft"
     assert post.metadata["tags"] == ["test"]
     assert "Contenu créé par agent" in post.content
+    assert post.metadata["updated_at"] == date.today().isoformat()
 
 
 def test_wiki_write_updates_existing_page(wiki_env):
@@ -156,3 +158,23 @@ def test_wiki_write_updates_existing_page(wiki_env):
     post = fm.load(str(existing / "existing.md"))
     assert post.metadata["title"] == "Nouveau Titre"
     assert "mis à jour" in post.content
+
+
+def test_wiki_write_invalid_type_returns_error(wiki_env):
+    from app.mcp.server import wiki_write
+    result = wiki_write(slug="imports--x", title="X", content="body", page_type="invalid")
+    assert result["written"] is False
+    assert "error" in result
+
+
+def test_wiki_write_preserves_sources_on_update(wiki_env):
+    existing = Path(settings.wiki_path) / "imports"
+    existing.mkdir(parents=True, exist_ok=True)
+    (existing / "src.md").write_text(
+        "---\ntitle: Source\nstatus: draft\nsources:\n  - raw/imports/foo.md\n---\n\n# Source\n",
+        encoding="utf-8",
+    )
+    from app.mcp.server import wiki_write
+    wiki_write(slug="imports--src", title="Source Updated", content="New content.")
+    post = fm.load(str(existing / "src.md"))
+    assert "raw/imports/foo.md" in post.metadata.get("sources", [])

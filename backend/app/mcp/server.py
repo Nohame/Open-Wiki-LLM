@@ -60,25 +60,47 @@ def wiki_guide() -> str:
     return wiki_manager.load_index()
 
 
+_VALID_TYPES = {"concept", "project", "procedure", "decision", "note", "entity"}
+_VALID_STATUSES = {"draft", "reviewed", "validated", "deprecated"}
+_VALID_CONFIDENCES = {"low", "medium", "high"}
+
+
 @mcp.tool()
 def wiki_write(
     slug: str,
     title: str,
     content: str,
-    type: str = "concept",
+    page_type: str = "concept",
     status: str = "draft",
     tags: list[str] | None = None,
     confidence: str = "medium",
 ) -> dict:
     """Crée ou met à jour une page wiki. Le backend assemble le frontmatter YAML automatiquement."""
+    if page_type not in _VALID_TYPES:
+        return {"slug": slug, "written": False, "error": f"type invalide: {page_type}"}
+    if status not in _VALID_STATUSES:
+        return {"slug": slug, "written": False, "error": f"status invalide: {status}"}
+    if confidence not in _VALID_CONFIDENCES:
+        return {"slug": slug, "written": False, "error": f"confidence invalide: {confidence}"}
+
+    # Preserve existing sources on update
+    existing_sources: list[str] = []
+    existing_path = wiki_manager._slug_to_path(slug)
+    if existing_path.exists():
+        try:
+            existing_post = fm.load(str(existing_path))
+            existing_sources = existing_post.metadata.get("sources") or []
+        except Exception:
+            existing_sources = []
+
     post = fm.Post(
         content,
         title=title,
-        type=type,
+        type=page_type,
         status=status,
         confidence=confidence,
         tags=tags or [],
-        sources=[],
+        sources=existing_sources,
         updated_at=date.today().isoformat(),
     )
     wiki_manager.apply_updates({slug: fm.dumps(post)})
