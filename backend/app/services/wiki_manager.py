@@ -29,6 +29,21 @@ def set_stale(slug: str, stale: bool) -> None:
     path.write_text(fm.dumps(post), encoding="utf-8")
 
 
+def set_deprecated(slug: str) -> bool:
+    path = _slug_to_path(slug)
+    if not path.exists():
+        logger.warning("set_deprecated: slug introuvable : %s", slug)
+        return False
+    try:
+        post = fm.load(str(path))
+    except Exception:
+        logger.warning("set_deprecated: frontmatter malformé pour %s", slug)
+        return False
+    post.metadata["status"] = "deprecated"
+    path.write_text(fm.dumps(post), encoding="utf-8")
+    return True
+
+
 def load_index() -> str:
     index_path = Path(settings.wiki_path) / "index.md"
     if not index_path.exists():

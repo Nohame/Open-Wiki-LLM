@@ -74,3 +74,23 @@ def test_set_stale_malformed_frontmatter(wiki_env, caplog):
     with caplog.at_level(logging.WARNING):
         set_stale("concept--broken", True)  # ne doit pas lever d'exception
     assert any("malformé" in r.message for r in caplog.records)
+
+
+def test_set_deprecated_marks_status(tmp_path, monkeypatch):
+    import frontmatter as fm
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    p = tmp_path / "concept" / "old.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("---\ntitle: Old\nstatus: draft\n---\n\n# Old\n", encoding="utf-8")
+    from app.services.wiki_manager import set_deprecated
+    result = set_deprecated("concept--old")
+    assert result is True
+    post = fm.load(str(p))
+    assert post.metadata["status"] == "deprecated"
+
+
+def test_set_deprecated_unknown_slug_returns_false(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "wiki_path", str(tmp_path))
+    from app.services.wiki_manager import set_deprecated
+    result = set_deprecated("concept--unknown")
+    assert result is False
