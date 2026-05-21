@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.health import router as health_router
@@ -9,7 +10,17 @@ from .api.log import router as log_router
 from .api.references import router as references_router
 from .mcp.server import mcp
 
-app = FastAPI(title="OpenWikiLLM", version="0.1.0")
+_mcp_http = mcp.http_app(transport="streamable-http")
+_mcp_sse = mcp.http_app(transport="sse")
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    async with _mcp_http.lifespan(app):
+        yield
+
+
+app = FastAPI(title="OpenWikiLLM", version="0.1.0", lifespan=_lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,4 +36,6 @@ app.include_router(ingest_router)
 app.include_router(answer_router)
 app.include_router(log_router)
 app.include_router(references_router)
-app.mount("/mcp", mcp.http_app())
+
+app.mount("/mcp", _mcp_http)      # Streamable HTTP — Claude Code / Claude Desktop
+app.mount("/mcp-sse", _mcp_sse)   # SSE legacy — n8n, anciens clients MCP

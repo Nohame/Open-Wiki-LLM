@@ -137,11 +137,14 @@ curl http://localhost:8088/api/pages/imports--livraison-24h -H "X-API-Key: <ta_c
 
 ## Serveur MCP
 
-Le serveur MCP est accessible sur `/mcp` (même port que l'API).
+Deux transports MCP disponibles sur le même port :
+
+| Transport | Endpoint | Clients |
+|---|---|---|
+| Streamable HTTP | `/mcp` | Claude Code, Claude Desktop |
+| SSE (legacy) | `/mcp-sse/sse` | n8n, anciens clients MCP |
 
 ### Claude Code / Claude Desktop
-
-Ajoute dans ta config MCP :
 
 ```json
 {
@@ -154,10 +157,10 @@ Ajoute dans ta config MCP :
 
 ### n8n (Docker)
 
-Utilise `host.docker.internal` à la place de `localhost` :
+URL SSE à configurer dans le nœud MCP de n8n :
 
 ```
-http://host.docker.internal:8088/api/answer
+http://host.docker.internal:8088/mcp-sse/sse
 ```
 
 ### Outils MCP disponibles
