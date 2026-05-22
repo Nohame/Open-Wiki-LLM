@@ -274,9 +274,8 @@ def test_ingest_marks_dependents_stale(client_with_dirs):
 
 
 def test_ingest_text_truncates_large_input(client_with_dirs):
-    """Un texte dépassant MAX_TEXT_CHARS doit être tronqué avant envoi à Ollama."""
-    from app.services import ingest_service
-    large_text = "A" * (ingest_service.MAX_TEXT_CHARS + 10_000)
+    """Un texte dépassant max_text_chars doit être tronqué avant envoi au LLM."""
+    from app.core import config_store
     captured = {}
 
     async def fake_compile(text, *args, **kwargs):
@@ -287,9 +286,9 @@ def test_ingest_text_truncates_large_input(client_with_dirs):
          patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(side_effect=fake_compile)):
         client_with_dirs.post(
             "/api/ingest/text",
-            json={"text": large_text, "title": "Test", "tags": []},
+            json={"text": "A" * 40_000, "title": "Test", "tags": []},
         )
-    assert len(captured["text"]) == ingest_service.MAX_TEXT_CHARS
+    assert len(captured["text"]) == 30000
 
 
 def test_ingest_file_ollama_timeout_returns_504(client_with_dirs):

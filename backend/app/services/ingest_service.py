@@ -6,8 +6,7 @@ from .ollama_service import compile_image_to_markdown, identify_related_pages, c
 from . import wiki_manager, schema_service, reference_service
 from .search_service import rebuild_index
 from ..core.config import settings
-
-MAX_TEXT_CHARS = 30_000
+from ..core import config_store
 
 
 def _slugify(title: str) -> str:
@@ -20,7 +19,7 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
     start = time.monotonic()
     today = date.today().isoformat()
     effective_title = title or "Source sans titre"
-    text = text[:MAX_TEXT_CHARS]
+    text = text[:config_store.load().ingest.max_text_chars]
     slug = _slugify(effective_title)
     new_slug = f"imports--{slug}"
 
