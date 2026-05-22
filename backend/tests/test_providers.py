@@ -1,4 +1,5 @@
 import asyncio
+import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.services.providers.base import LLMProvider
 from app.services.providers.ollama import OllamaProvider
@@ -6,6 +7,10 @@ from app.services.providers.openai_provider import OpenAIProvider
 from app.services.providers.custom_provider import CustomProvider
 from app.services.providers.gemini_provider import GeminiProvider
 from app.services.providers.anthropic_provider import AnthropicProvider
+from app.core.config import settings as env_settings
+from app.core import config_store
+from app.models.settings import AppSettings
+from app.services import llm_service
 
 
 def test_llmprovider_is_abstract():
@@ -123,3 +128,36 @@ def test_anthropic_generate():
     headers = mock_client.post.call_args[1]["headers"]
     assert headers["x-api-key"] == "sk-ant-test"
     assert headers["anthropic-version"] == "2023-06-01"
+
+
+def _config_with_provider(provider_name: str, **kwargs) -> AppSettings:
+    s = AppSettings()
+    s.llm.provider = provider_name
+    for k, v in kwargs.items():
+        setattr(getattr(s.llm, provider_name), k, v)
+    return s
+
+
+def test_get_provider_returns_ollama_by_default():
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.object(env_settings, "data_path", tmp):
+            provider = llm_service.get_provider()
+    assert isinstance(provider, OllamaProvider)
+
+
+def test_get_provider_returns_openai():
+    s = _config_with_provider("openai", api_key="sk-test")
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.object(env_settings, "data_path", tmp):
+            config_store.save(s)
+            provider = llm_service.get_provider()
+    assert isinstance(provider, OpenAIProvider)
+
+
+def test_get_provider_returns_custom():
+    s = _config_with_provider("custom", base_url="https://openrouter.ai/api/v1")
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.object(env_settings, "data_path", tmp):
+            config_store.save(s)
+            provider = llm_service.get_provider()
+    assert isinstance(provider, CustomProvider)
