@@ -52,6 +52,15 @@ export function useApi() {
     })
   }
 
+  async function put<T>(path: string, body: unknown): Promise<T> {
+    return $fetch<T>(`${baseUrl}${path}`, {
+      method: 'PUT',
+      headers: headers({ 'Content-Type': 'application/json' }),
+      body: body as Record<string, unknown>,
+      onResponseError,
+    })
+  }
+
   async function del(path: string): Promise<void> {
     await $fetch(`${baseUrl}${path}`, {
       method: 'DELETE',
@@ -60,5 +69,5 @@ export function useApi() {
     })
   }
 
-  return { get, post, postForm, patch, del }
+  return { get, post, postForm, patch, put, del }
 }
