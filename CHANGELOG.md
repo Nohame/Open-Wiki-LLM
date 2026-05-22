@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Ajouté
+- Page `/settings` : sélection du provider LLM (Ollama, OpenAI, Gemini, Anthropic, Custom) et paramètre `max_text_chars`
+- Persistance de la config dans `data_path/config.json` (survit aux redémarrages Docker)
+- Redirection automatique vers `/settings` au premier démarrage si aucun provider configuré
+- Provider pattern : `LLMProvider` ABC + 5 implémentations httpx sans SDK externe
+- `GET/PUT /api/settings` avec masquage/préservation des clés API (`****`)
+- Lien "Paramètres" dans la sidebar
+
+### Modifié
+- `ollama_service.py` et `answer_service.py` délèguent désormais au provider actif via `llm_service.get_provider()`
+- `ingest_service.py` lit `max_text_chars` depuis la config au lieu d'une constante module
+
+---
+
 ## [0.1.0] — Non publié
 
 ### Ajouté

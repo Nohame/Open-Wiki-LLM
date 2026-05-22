@@ -138,17 +138,6 @@ async def compile_image_to_markdown(
     return _strip_markdown_fence(await provider.generate_with_image(prompt, image_b64))
 
 
-async def compile_to_markdown(text: str, title: str, tags: list[str], date: str) -> str:
-    prompt = COMPILE_PROMPT.format(
-        text=text,
-        title=title,
-        tags=json.dumps(tags, ensure_ascii=False),
-        date=date,
-    )
-    provider = llm_service.get_provider()
-    return _strip_markdown_fence(await provider.generate(prompt))
-
-
 async def identify_related_pages(text: str, title: str, index_content: str) -> list[str]:
     prompt = IDENTIFY_RELATED_PROMPT.format(
         title=title,
