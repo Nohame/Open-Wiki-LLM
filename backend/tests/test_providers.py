@@ -4,6 +4,8 @@ from app.services.providers.base import LLMProvider
 from app.services.providers.ollama import OllamaProvider
 from app.services.providers.openai_provider import OpenAIProvider
 from app.services.providers.custom_provider import CustomProvider
+from app.services.providers.gemini_provider import GeminiProvider
+from app.services.providers.anthropic_provider import AnthropicProvider
 
 
 def test_llmprovider_is_abstract():
@@ -91,3 +93,33 @@ def test_custom_generate_uses_configured_base_url():
     assert result == "custom answer"
     url = mock_client.post.call_args[0][0]
     assert url == "https://openrouter.ai/api/v1/chat/completions"
+
+
+def test_gemini_generate():
+    mock_client, _ = _mock_httpx(
+        {"candidates": [{"content": {"parts": [{"text": "gemini answer"}]}}]}
+    )
+    with patch("app.services.providers.gemini_provider.httpx.AsyncClient") as MockCls:
+        MockCls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockCls.return_value.__aexit__ = AsyncMock(return_value=None)
+        provider = GeminiProvider("gemini-key", "gemini-1.5-pro", "gemini-1.5-pro")
+        result = asyncio.run(provider.generate("hello"))
+    assert result == "gemini answer"
+    url = mock_client.post.call_args[0][0]
+    assert "gemini-key" in url
+    assert "gemini-1.5-pro" in url
+
+
+def test_anthropic_generate():
+    mock_client, _ = _mock_httpx(
+        {"content": [{"text": "claude answer"}]}
+    )
+    with patch("app.services.providers.anthropic_provider.httpx.AsyncClient") as MockCls:
+        MockCls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockCls.return_value.__aexit__ = AsyncMock(return_value=None)
+        provider = AnthropicProvider("sk-ant-test", "claude-opus-4-7", "claude-opus-4-7")
+        result = asyncio.run(provider.generate("hello"))
+    assert result == "claude answer"
+    headers = mock_client.post.call_args[1]["headers"]
+    assert headers["x-api-key"] == "sk-ant-test"
+    assert headers["anthropic-version"] == "2023-06-01"
