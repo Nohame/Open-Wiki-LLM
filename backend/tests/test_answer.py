@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import frontmatter as fm
 from fastapi.testclient import TestClient
 from app.main import app
@@ -44,9 +44,11 @@ def test_strict_mode_no_result_returns_fallback(client_validated):
 def test_validated_only_returns_answer(client_validated):
     # Rebuild the search index so the validated page is findable
     client_validated.post("/api/index/rebuild")
+    mock_provider = MagicMock()
+    mock_provider.generate = AsyncMock(return_value="Livraison en 24h.")
     with patch(
-        "app.services.answer_service.call_ollama",
-        new=AsyncMock(return_value="Livraison en 24h."),
+        "app.services.answer_service.llm_service.get_provider",
+        return_value=mock_provider,
     ):
         response = client_validated.post(
             "/api/answer",

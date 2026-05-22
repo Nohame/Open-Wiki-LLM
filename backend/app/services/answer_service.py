@@ -1,8 +1,7 @@
-import httpx
 from .search_service import search
 from .wiki_service import list_pages
+from . import llm_service
 from ..models.answer import AnswerRequest, AnswerResponse
-from ..core.config import settings
 
 FALLBACK = "Je ne trouve pas cette information dans le wiki validé."
 
@@ -18,16 +17,6 @@ Réponds en te basant uniquement sur ces extraits. Si tu ne peux pas répondre, 
 """
 
 
-async def call_ollama(prompt: str) -> str:
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json={"model": settings.ollama_model, "prompt": prompt, "stream": False},
-        )
-        response.raise_for_status()
-        return response.json()["response"]
-
-
 async def answer(request: AnswerRequest) -> AnswerResponse:
     results = search(request.question, limit=request.limit)
 
@@ -39,11 +28,9 @@ async def answer(request: AnswerRequest) -> AnswerResponse:
     if not results:
         return AnswerResponse(answer=FALLBACK, mode=request.mode, sources=[])
 
-    context = "\n\n".join(
-        f"[{r.title}]\n{r.snippet}" for r in results
-    )
+    context = "\n\n".join(f"[{r.title}]\n{r.snippet}" for r in results)
     prompt = ANSWER_PROMPT.format(question=request.question, context=context)
-    llm_answer = await call_ollama(prompt)
+    llm_answer = await llm_service.get_provider().generate(prompt)
 
     return AnswerResponse(
         answer=llm_answer,
