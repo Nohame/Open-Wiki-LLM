@@ -1,0 +1,76 @@
+import pytest
+import tempfile
+from unittest.mock import patch
+from fastapi.testclient import TestClient
+from app.main import app
+from app.core.config import settings
+from app.core import config_store
+from app.models.settings import AppSettings
+
+
+@pytest.fixture
+def client_settings(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmp:
+        monkeypatch.setattr(settings, "data_path", tmp)
+        monkeypatch.setattr(settings, "api_key", "")
+        yield TestClient(app)
+
+
+def test_get_settings_returns_defaults(client_settings):
+    response = client_settings.get("/api/settings")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["llm"]["provider"] == "ollama"
+    assert data["ingest"]["max_text_chars"] == 30000
+
+
+def test_get_settings_masks_api_key(client_settings, monkeypatch, tmp_path):
+    monkeypatch.setattr(settings, "data_path", str(tmp_path))
+    s = AppSettings()
+    s.llm.provider = "openai"
+    s.llm.openai.api_key = "sk-real-key"
+    config_store.save(s)
+    response = client_settings.get("/api/settings")
+    assert response.json()["llm"]["openai"]["api_key"] == "****"
+
+
+def test_put_settings_saves_and_returns(client_settings):
+    payload = {
+        "llm": {
+            "provider": "openai",
+            "ollama": {"base_url": "http://host.docker.internal:11434", "model": "mistral", "vision_model": "llava"},
+            "openai": {"api_key": "sk-new", "model": "gpt-4o", "vision_model": "gpt-4o"},
+            "gemini": {"api_key": "", "model": "gemini-1.5-pro", "vision_model": "gemini-1.5-pro"},
+            "anthropic": {"api_key": "", "model": "claude-opus-4-7", "vision_model": "claude-opus-4-7"},
+            "custom": {"base_url": "", "api_key": "", "model": "", "vision_model": ""},
+        },
+        "ingest": {"max_text_chars": 20000},
+    }
+    response = client_settings.put("/api/settings", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["llm"]["provider"] == "openai"
+    assert data["llm"]["openai"]["api_key"] == "****"
+    assert data["ingest"]["max_text_chars"] == 20000
+
+
+def test_put_settings_preserves_existing_api_key_when_masked(client_settings, monkeypatch, tmp_path):
+    monkeypatch.setattr(settings, "data_path", str(tmp_path))
+    s = AppSettings()
+    s.llm.openai.api_key = "sk-original"
+    config_store.save(s)
+
+    payload = {
+        "llm": {
+            "provider": "openai",
+            "ollama": {"base_url": "", "model": "mistral", "vision_model": "llava"},
+            "openai": {"api_key": "****", "model": "gpt-4o", "vision_model": "gpt-4o"},
+            "gemini": {"api_key": "", "model": "gemini-1.5-pro", "vision_model": "gemini-1.5-pro"},
+            "anthropic": {"api_key": "", "model": "claude-opus-4-7", "vision_model": "claude-opus-4-7"},
+            "custom": {"base_url": "", "api_key": "", "model": "", "vision_model": ""},
+        },
+        "ingest": {"max_text_chars": 30000},
+    }
+    client_settings.put("/api/settings", json=payload)
+    saved = config_store.load()
+    assert saved.llm.openai.api_key == "sk-original"
