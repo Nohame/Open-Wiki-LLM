@@ -1,7 +1,6 @@
 import base64
-import httpx
 import json
-from ..core.config import settings
+from . import llm_service
 
 COMPILE_PROMPT = """\
 Tu es un assistant qui structure des textes bruts en pages wiki Markdown.
@@ -135,18 +134,8 @@ async def compile_image_to_markdown(
         tags=json.dumps(tags, ensure_ascii=False),
         date=date,
     )
-    async with httpx.AsyncClient(timeout=None) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json={
-                "model": settings.ollama_vision_model,
-                "prompt": prompt,
-                "images": [image_b64],
-                "stream": False,
-            },
-        )
-        response.raise_for_status()
-        return _strip_markdown_fence(response.json()["response"])
+    provider = llm_service.get_provider()
+    return _strip_markdown_fence(await provider.generate_with_image(prompt, image_b64))
 
 
 async def compile_to_markdown(text: str, title: str, tags: list[str], date: str) -> str:
@@ -156,17 +145,8 @@ async def compile_to_markdown(text: str, title: str, tags: list[str], date: str)
         tags=json.dumps(tags, ensure_ascii=False),
         date=date,
     )
-    async with httpx.AsyncClient(timeout=None) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json={
-                "model": settings.ollama_model,
-                "prompt": prompt,
-                "stream": False,
-            },
-        )
-        response.raise_for_status()
-        return _strip_markdown_fence(response.json()["response"])
+    provider = llm_service.get_provider()
+    return _strip_markdown_fence(await provider.generate(prompt))
 
 
 async def identify_related_pages(text: str, title: str, index_content: str) -> list[str]:
@@ -175,13 +155,8 @@ async def identify_related_pages(text: str, title: str, index_content: str) -> l
         text=text,
         index=index_content or "(index vide)",
     )
-    async with httpx.AsyncClient(timeout=None) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json={"model": settings.ollama_model, "prompt": prompt, "stream": False},
-        )
-        response.raise_for_status()
-        raw = response.json()["response"].strip()
+    provider = llm_service.get_provider()
+    raw = (await provider.generate(prompt)).strip()
     try:
         slugs = json.loads(raw)
         if isinstance(slugs, list):
@@ -214,10 +189,5 @@ async def compile_multi_page(
         related_pages=pages_block,
         new_slug=new_slug,
     )
-    async with httpx.AsyncClient(timeout=None) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json={"model": settings.ollama_model, "prompt": prompt, "stream": False},
-        )
-        response.raise_for_status()
-        return response.json()["response"]
+    provider = llm_service.get_provider()
+    return await provider.generate(prompt)
