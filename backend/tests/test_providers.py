@@ -2,6 +2,8 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.services.providers.base import LLMProvider
 from app.services.providers.ollama import OllamaProvider
+from app.services.providers.openai_provider import OpenAIProvider
+from app.services.providers.custom_provider import CustomProvider
 
 
 def test_llmprovider_is_abstract():
@@ -43,3 +45,49 @@ def test_ollama_generate_with_image():
     call_kwargs = mock_client.post.call_args
     assert call_kwargs[1]["json"]["model"] == "llava"
     assert call_kwargs[1]["json"]["images"] == ["abc123"]
+
+
+def test_openai_generate():
+    mock_client, _ = _mock_httpx(
+        {"choices": [{"message": {"content": "answer"}}]}
+    )
+    with patch("app.services.providers.openai_provider.httpx.AsyncClient") as MockCls:
+        MockCls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockCls.return_value.__aexit__ = AsyncMock(return_value=None)
+        provider = OpenAIProvider("sk-test", "gpt-4o", "gpt-4o")
+        result = asyncio.run(provider.generate("hello"))
+    assert result == "answer"
+    call_json = mock_client.post.call_args[1]["json"]
+    assert call_json["model"] == "gpt-4o"
+    assert call_json["messages"][0]["content"] == "hello"
+
+
+def test_openai_generate_with_image():
+    mock_client, _ = _mock_httpx(
+        {"choices": [{"message": {"content": "img answer"}}]}
+    )
+    with patch("app.services.providers.openai_provider.httpx.AsyncClient") as MockCls:
+        MockCls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockCls.return_value.__aexit__ = AsyncMock(return_value=None)
+        provider = OpenAIProvider("sk-test", "gpt-4o", "gpt-4o")
+        result = asyncio.run(provider.generate_with_image("describe", "b64data"))
+    assert result == "img answer"
+    content = mock_client.post.call_args[1]["json"]["messages"][0]["content"]
+    assert isinstance(content, list)
+    types = [item["type"] for item in content]
+    assert "text" in types
+    assert "image_url" in types
+
+
+def test_custom_generate_uses_configured_base_url():
+    mock_client, _ = _mock_httpx(
+        {"choices": [{"message": {"content": "custom answer"}}]}
+    )
+    with patch("app.services.providers.custom_provider.httpx.AsyncClient") as MockCls:
+        MockCls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockCls.return_value.__aexit__ = AsyncMock(return_value=None)
+        provider = CustomProvider("https://openrouter.ai/api/v1", "sk-or", "mistral", "mistral")
+        result = asyncio.run(provider.generate("hello"))
+    assert result == "custom answer"
+    url = mock_client.post.call_args[0][0]
+    assert url == "https://openrouter.ai/api/v1/chat/completions"
