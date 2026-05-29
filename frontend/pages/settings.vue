@@ -20,6 +20,16 @@
         <SettingsIngestSettings v-model="settings.ingest" />
       </section>
 
+      <section class="p-4 bg-gray-900 border border-gray-800 rounded-xl space-y-4">
+        <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">Connecteurs</h2>
+        <SettingsConnectorsSettings
+          v-model="settings.connectors"
+          :connection-failed="connectionFailed"
+          @connect="handleConnect"
+          @disconnect="handleDisconnect"
+        />
+      </section>
+
       <div class="flex items-center gap-4">
         <button
           :disabled="saving"
@@ -39,15 +49,26 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const { settings, saving, saveError, fetchSettings, saveSettings, isConfigured } = useSettings()
+const { getAuthUrl, disconnect } = useGoogleDrive()
 const router = useRouter()
+const route = useRoute()
 const saved = ref(false)
+const connectionFailed = ref(false)
 const isSetupMode = computed(() => !isConfigured())
 
 onMounted(async () => {
   await fetchSettings()
+  if (route.query.connected === 'google-drive') {
+    await fetchSettings()
+    saved.value = true
+    await router.replace('/settings')
+  }
+  if (route.query.error === 'google-drive-denied') {
+    await router.replace('/settings')
+  }
 })
 
 async function handleSave() {
@@ -64,6 +85,27 @@ async function handleSave() {
     }
   } catch {
     // saveError is handled in useSettings
+  }
+}
+
+async function handleConnect() {
+  if (!settings.value) return
+  connectionFailed.value = false
+  try {
+    await saveSettings(settings.value)
+    const url = await getAuthUrl()
+    window.location.href = url
+  } catch {
+    connectionFailed.value = true
+  }
+}
+
+async function handleDisconnect() {
+  try {
+    await disconnect()
+    await fetchSettings()
+  } catch {
+    // ignore
   }
 }
 </script>
