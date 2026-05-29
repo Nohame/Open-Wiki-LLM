@@ -22,17 +22,19 @@
     <IngestText v-if="activeTab === 'text'" />
     <IngestImage v-else-if="activeTab === 'image'" />
     <IngestFile v-else-if="activeTab === 'file'" />
+    <IngestGoogleDriveTab v-else-if="activeTab === 'gdrive'" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { FileText, ImageIcon, FolderOpen } from 'lucide-vue-next'
+import { FileText, ImageIcon, FolderOpen, HardDrive } from 'lucide-vue-next'
 import IngestFile from '~/components/ingest/IngestFile.vue'
 
-const activeTab = ref<'text' | 'image' | 'file'>('text')
+const activeTab = ref<'text' | 'image' | 'file' | 'gdrive'>('text')
 const tabs = [
   { id: 'text' as const, label: 'Texte', icon: FileText },
   { id: 'image' as const, label: 'Image', icon: ImageIcon },
   { id: 'file' as const, label: 'Fichiers', icon: FolderOpen },
+  { id: 'gdrive' as const, label: 'Google Drive', icon: HardDrive },
 ]
 </script>
