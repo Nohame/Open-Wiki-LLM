@@ -9,6 +9,7 @@ from .api.answer import router as answer_router
 from .api.log import router as log_router
 from .api.references import router as references_router
 from .api.settings import router as settings_router
+from .api.connectors import router as connectors_router
 from .mcp.server import mcp
 
 _mcp_http = mcp.http_app(transport="streamable-http")
@@ -38,6 +39,7 @@ app.include_router(answer_router)
 app.include_router(log_router)
 app.include_router(references_router)
 app.include_router(settings_router)
+app.include_router(connectors_router)
 
 app.mount("/mcp", _mcp_http)      # Streamable HTTP — Claude Code / Claude Desktop
 app.mount("/mcp-sse", _mcp_sse)   # SSE legacy — n8n, anciens clients MCP
