@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     wiki_path: str = "/app/wiki"
     data_path: str = "/app/data"
 
+    app_url: str = "http://localhost:3000"
+    backend_url: str = "http://localhost:8088"
+
     ollama_base_url: str = Field(
         default="http://host.docker.internal:11434",
         validation_alias="OLLAMA_BASE_URL",

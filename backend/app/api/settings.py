@@ -7,6 +7,7 @@ router = APIRouter(prefix="/api", dependencies=[Depends(verify_api_key)])
 
 _MASKED = "****"
 _MASKED_PROVIDERS = ("openai", "gemini", "anthropic", "custom")
+_MASKED_DRIVE_FIELDS = ("client_secret", "access_token", "refresh_token")
 
 
 def _mask(s: AppSettings) -> AppSettings:
@@ -14,6 +15,10 @@ def _mask(s: AppSettings) -> AppSettings:
     for p in _MASKED_PROVIDERS:
         if data["llm"][p]["api_key"]:
             data["llm"][p]["api_key"] = _MASKED
+    gd = data["connectors"]["google_drive"]
+    for field in _MASKED_DRIVE_FIELDS:
+        if gd[field]:
+            gd[field] = _MASKED
     return AppSettings.model_validate(data)
 
 
@@ -22,6 +27,11 @@ def _merge_keys(existing: AppSettings, incoming: AppSettings) -> AppSettings:
     for p in _MASKED_PROVIDERS:
         if data["llm"][p]["api_key"] == _MASKED:
             data["llm"][p]["api_key"] = getattr(existing.llm, p).api_key
+    gd_in = data["connectors"]["google_drive"]
+    gd_ex = existing.connectors.google_drive
+    for field in _MASKED_DRIVE_FIELDS:
+        if gd_in[field] == _MASKED:
+            gd_in[field] = getattr(gd_ex, field)
     return AppSettings.model_validate(data)
 
 

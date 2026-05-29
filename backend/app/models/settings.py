@@ -46,6 +46,19 @@ class IngestConfig(BaseModel):
     max_text_chars: int = 30000
 
 
+class GoogleDriveConfig(BaseModel):
+    client_id: str = ""
+    client_secret: str = ""
+    access_token: str = ""
+    refresh_token: str = ""
+    token_expiry: str = ""
+
+
+class ConnectorsConfig(BaseModel):
+    google_drive: GoogleDriveConfig = GoogleDriveConfig()
+
+
 class AppSettings(BaseModel):
     llm: LLMConfig = LLMConfig()
     ingest: IngestConfig = IngestConfig()
+    connectors: ConnectorsConfig = ConnectorsConfig()
