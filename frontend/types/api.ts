@@ -103,4 +103,31 @@ export interface IngestConfig {
 export interface AppSettings {
   llm: LLMConfig
   ingest: IngestConfig
+  connectors: ConnectorsConfig
+}
+
+export interface GoogleDriveConfig {
+  client_id: string
+  client_secret: string
+  access_token: string
+  refresh_token: string
+  token_expiry: string
+}
+
+export interface ConnectorsConfig {
+  google_drive: GoogleDriveConfig
+}
+
+export interface GoogleDriveFile {
+  id: string
+  name: string
+  mimeType: string
+  size?: number
+  modifiedTime: string
+  isFolder: boolean
+}
+
+export interface GoogleDriveListResponse {
+  files: GoogleDriveFile[]
+  folder_id: string
 }

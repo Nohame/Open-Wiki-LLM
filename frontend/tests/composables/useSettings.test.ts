@@ -31,6 +31,15 @@ const defaultSettings: AppSettings = {
     custom: { base_url: '', api_key: '', model: '', vision_model: '' },
   },
   ingest: { max_text_chars: 30000 },
+  connectors: {
+    google_drive: {
+      client_id: '',
+      client_secret: '',
+      access_token: '',
+      refresh_token: '',
+      token_expiry: '',
+    },
+  },
 }
 
 describe('useSettings', () => {
