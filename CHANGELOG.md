@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Ajouté
+- Connecteur Google Drive : configuration OAuth dans la page Paramètres (section Connecteurs) et navigation/ingestion de fichiers Drive depuis la page Ingest
+- `GET /api/connectors/google-drive/auth-url` — génère l'URL OAuth Google
+- `GET /api/connectors/google-drive/callback` — échange le code OAuth et sauvegarde les tokens
+- `DELETE /api/connectors/google-drive` — déconnexion (efface les tokens, préserve credentials)
+- `GET /api/connectors/google-drive/files` — liste fichiers/dossiers Drive (PDF, TXT, MD, DOCX, Google Docs)
+- `POST /api/connectors/google-drive/ingest` — télécharge et ingère un fichier Drive via le pipeline existant
+- Rafraîchissement automatique des tokens OAuth avec persistance en config.json
+- Env vars `OPENWIKILLM_APP_URL` et `OPENWIKILLM_BACKEND_URL` pour la configuration des URLs OAuth
+
+### Modifié (suite connecteur Google Drive)
 - Page `/settings` : sélection du provider LLM (Ollama, OpenAI, Gemini, Anthropic, Custom) et paramètre `max_text_chars`
 - Persistance de la config dans `data_path/config.json` (survit aux redémarrages Docker)
 - Redirection automatique vers `/settings` au premier démarrage si aucun provider configuré

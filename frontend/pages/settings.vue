@@ -67,6 +67,7 @@ onMounted(async () => {
     await router.replace('/settings')
   }
   if (route.query.error === 'google-drive-denied') {
+    connectionFailed.value = true
     await router.replace('/settings')
   }
 })
