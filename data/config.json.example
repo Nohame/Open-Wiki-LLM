@@ -1,0 +1,49 @@
+{
+  "llm": {
+    "provider": "ollama",
+    "ollama": {
+      "base_url": "http://host.docker.internal:11434",
+      "model": "deepseek-v4-pro:cloud",
+      "vision_model": "llava"
+    },
+    "openai": {
+      "api_key": "",
+      "model": "gpt-4o",
+      "vision_model": "gpt-4o"
+    },
+    "gemini": {
+      "api_key": "",
+      "model": "gemini-1.5-pro",
+      "vision_model": "gemini-1.5-pro"
+    },
+    "anthropic": {
+      "api_key": "",
+      "model": "claude-opus-4-7",
+      "vision_model": "claude-opus-4-7"
+    },
+    "custom": {
+      "base_url": "",
+      "api_key": "",
+      "model": "",
+      "vision_model": ""
+    }
+  },
+  "ingest": {
+    "max_text_chars": 30000
+  },
+  "connectors": {
+    "google_drive": {
+      "client_id": "",
+      "client_secret": "",
+      "access_token": "",
+      "refresh_token": "",
+      "token_expiry": ""
+    }
+  },
+  "git": {
+    "enabled": false,
+    "auto_push": false,
+    "remote_url": "",
+    "branch": "main"
+  }
+}
