@@ -30,6 +30,11 @@
         />
       </section>
 
+      <section class="p-4 bg-gray-900 border border-gray-800 rounded-xl space-y-4">
+        <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">Git</h2>
+        <SettingsGitSettings v-model="settings.git" />
+      </section>
+
       <div class="flex items-center gap-4">
         <button
           :disabled="saving"
