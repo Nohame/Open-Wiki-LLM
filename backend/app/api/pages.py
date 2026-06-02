@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Response
 from ..services.wiki_service import list_pages, get_page
-from ..services import wiki_manager
+from ..services import wiki_manager, git_service
 from ..models.page import WikiPage, StaleUpdate
 from ..core.auth import verify_api_key
 
@@ -25,6 +25,7 @@ def delete_page(slug: str) -> Response:
     deleted = wiki_manager.delete_page(slug)
     if not deleted:
         raise HTTPException(status_code=404, detail="Page not found")
+    git_service.commit_edit(slug, "delete")
     return Response(status_code=204)
 
 

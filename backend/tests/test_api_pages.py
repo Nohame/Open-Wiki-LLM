@@ -70,3 +70,29 @@ def test_delete_page_removes_from_list(client_with_wiki):
     response = client_with_wiki.get("/api/pages")
     assert response.status_code == 200
     assert len(response.json()) == 0
+
+
+def test_delete_page_calls_git_commit(monkeypatch):
+    from unittest.mock import patch
+    with tempfile.TemporaryDirectory() as tmp:
+        wiki = Path(tmp)
+        (wiki / "concepts").mkdir()
+        page = wiki / "concepts" / "livraison.md"
+        post = fm.Post(
+            "## Résumé\n\nLivraison en 24h.",
+            title="Livraison 24h",
+            type="concept",
+            status="validated",
+            confidence="high",
+            tags=[],
+            sources=[],
+            updated_at="2026-06-02",
+        )
+        page.write_text(fm.dumps(post))
+        monkeypatch.setattr(settings, "api_key", "")
+        monkeypatch.setattr(settings, "wiki_path", str(wiki))
+        with patch("app.api.pages.git_service.commit_edit", return_value="abc1234") as mock_git:
+            client = TestClient(app)
+            response = client.delete("/api/pages/concepts--livraison")
+        assert response.status_code == 204
+        mock_git.assert_called_once_with("concepts--livraison", "delete")
