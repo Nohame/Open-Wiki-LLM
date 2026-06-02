@@ -45,8 +45,21 @@ def init_repo() -> None:
         gitignore.write_text("*.pyc\n__pycache__/\n", encoding="utf-8")
     _run(["add", "-A"])
     result = _run(["commit", "-m", "chore(wiki): init", "--allow-empty"], check=False)
-    if result.returncode != 0 and "nothing to commit" not in result.stdout:
+    if result.returncode != 0 and "nothing to commit" not in (result.stdout + result.stderr):
         logger.warning("git init commit warning: %s", result.stderr)
+
+
+def _commit_and_maybe_push(msg: str) -> str | None:
+    result = _run(["commit", "-m", msg, "--allow-empty"], check=False)
+    if result.returncode != 0:
+        logger.warning("git commit failed: %s", result.stderr)
+        return None
+    hash_result = _run(["rev-parse", "--short", "HEAD"])
+    commit_hash = hash_result.stdout.strip()
+    cfg = config_store.load()
+    if cfg.git.auto_push and cfg.git.remote_url:
+        push()
+    return commit_hash
 
 
 def commit_ingest(source: str, written: list[str], deleted: list[str]) -> str | None:
@@ -66,16 +79,7 @@ def commit_ingest(source: str, written: list[str], deleted: list[str]) -> str | 
             parts.append(f"{n} supprimée{'s' if n > 1 else ''}")
         detail = ", ".join(parts) if parts else "aucun changement"
         msg = f"feat(wiki): ingest {source} — {detail}"
-        result = _run(["commit", "-m", msg, "--allow-empty"], check=False)
-        if result.returncode != 0:
-            logger.warning("git commit_ingest failed: %s", result.stderr)
-            return None
-        hash_result = _run(["rev-parse", "--short", "HEAD"])
-        commit_hash = hash_result.stdout.strip()
-        cfg = config_store.load()
-        if cfg.git.auto_push and cfg.git.remote_url:
-            push()
-        return commit_hash
+        return _commit_and_maybe_push(msg)
     except GitNotAvailableError as e:
         logger.warning("git non disponible: %s", e)
         return None
@@ -90,16 +94,7 @@ def commit_edit(slug: str, action: str) -> str | None:
     try:
         _run(["add", "-A"])
         msg = f"{action}(wiki): {slug}"
-        result = _run(["commit", "-m", msg, "--allow-empty"], check=False)
-        if result.returncode != 0:
-            logger.warning("git commit_edit failed: %s", result.stderr)
-            return None
-        hash_result = _run(["rev-parse", "--short", "HEAD"])
-        commit_hash = hash_result.stdout.strip()
-        cfg = config_store.load()
-        if cfg.git.auto_push and cfg.git.remote_url:
-            push()
-        return commit_hash
+        return _commit_and_maybe_push(msg)
     except GitNotAvailableError as e:
         logger.warning("git non disponible: %s", e)
         return None
