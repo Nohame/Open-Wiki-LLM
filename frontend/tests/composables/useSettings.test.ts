@@ -40,6 +40,7 @@ const defaultSettings: AppSettings = {
       token_expiry: '',
     },
   },
+  git: { enabled: false, auto_push: false, remote_url: '', branch: 'main' },
 }
 
 describe('useSettings', () => {

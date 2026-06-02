@@ -104,6 +104,7 @@ export interface AppSettings {
   llm: LLMConfig
   ingest: IngestConfig
   connectors: ConnectorsConfig
+  git: GitConfig
 }
 
 export interface GoogleDriveConfig {
@@ -116,6 +117,20 @@ export interface GoogleDriveConfig {
 
 export interface ConnectorsConfig {
   google_drive: GoogleDriveConfig
+}
+
+export interface GitConfig {
+  enabled: boolean
+  auto_push: boolean
+  remote_url: string
+  branch: string
+}
+
+export interface GitStatus {
+  enabled: boolean
+  initialized: boolean
+  last_commit: string | null
+  dirty_files: number
 }
 
 export interface GoogleDriveFile {
