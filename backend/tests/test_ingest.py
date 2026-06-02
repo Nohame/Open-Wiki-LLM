@@ -329,3 +329,20 @@ def test_ingest_clears_stale_on_updated(client_with_dirs):
     # concept--groove a été mis à jour → stale doit être False
     page = load_page(Path(wiki_tmp, "concept", "groove.md"), Path(wiki_tmp))
     assert page.stale is False
+
+
+def test_ingest_calls_git_commit(client_with_dirs):
+    from unittest.mock import patch
+    with patch("app.services.ingest_service.identify_related_pages", new=AsyncMock(return_value=[])), \
+         patch("app.services.ingest_service.compile_multi_page", new=AsyncMock(return_value=MOCK_XML)), \
+         patch("app.services.git_service.commit_ingest", return_value="abc1234") as mock_git:
+        response = client_with_dirs.post(
+            "/api/ingest/text",
+            json={"text": "Texte source.", "title": "Test Ingestion", "tags": []},
+        )
+    assert response.status_code == 200
+    mock_git.assert_called_once()
+    args = mock_git.call_args[0]
+    assert args[0] == "test-ingestion"  # source slug slugifié depuis le titre
+    assert "imports--test-ingestion" in args[1]  # written slugs
+    assert args[2] == []  # deleted slugs

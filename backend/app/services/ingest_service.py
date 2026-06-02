@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from datetime import date
 from .ollama_service import compile_image_to_markdown, identify_related_pages, compile_multi_page
-from . import wiki_manager, schema_service, reference_service
+from . import wiki_manager, schema_service, reference_service, git_service
 from .search_service import rebuild_index
 from ..core.config import settings
 from ..core import config_store
@@ -78,6 +78,8 @@ async def ingest_text(text: str, title: str | None, tags: list[str]) -> dict:
         f"- Tags : {', '.join(tags) or '—'}\n"
         f"- Durée : {duration_s}s\n"
     )
+
+    git_service.commit_ingest(slug, written_slugs, [])
 
     return {
         "slug": new_slug,
