@@ -140,3 +140,25 @@ def test_put_settings_preserves_drive_tokens_when_masked(client_settings, monkey
     assert saved.connectors.google_drive.access_token == "ya29.access"
     assert saved.connectors.google_drive.refresh_token == "1//refresh"
     assert saved.connectors.google_drive.client_id == "client-id"
+
+
+def test_git_settings_defaults():
+    from app.models.settings import AppSettings
+    s = AppSettings()
+    assert s.git.enabled is False
+    assert s.git.auto_push is False
+    assert s.git.remote_url == ""
+    assert s.git.branch == "main"
+
+
+def test_git_settings_persisted(tmp_path, monkeypatch):
+    from app.core.config import settings as core_settings
+    monkeypatch.setattr(core_settings, "data_path", str(tmp_path))
+    from app.core import config_store
+    cfg = config_store.load()
+    cfg.git.enabled = True
+    cfg.git.branch = "wiki"
+    config_store.save(cfg)
+    reloaded = config_store.load()
+    assert reloaded.git.enabled is True
+    assert reloaded.git.branch == "wiki"

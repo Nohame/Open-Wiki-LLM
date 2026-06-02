@@ -58,7 +58,15 @@ class ConnectorsConfig(BaseModel):
     google_drive: GoogleDriveConfig = GoogleDriveConfig()
 
 
+class GitSettings(BaseModel):
+    enabled: bool = False
+    auto_push: bool = False
+    remote_url: str = ""
+    branch: str = "main"
+
+
 class AppSettings(BaseModel):
     llm: LLMConfig = LLMConfig()
     ingest: IngestConfig = IngestConfig()
     connectors: ConnectorsConfig = ConnectorsConfig()
+    git: GitSettings = GitSettings()
