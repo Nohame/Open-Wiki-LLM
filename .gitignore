@@ -17,6 +17,9 @@ build/
 # Data
 data/*.db
 data/config.json
+
+# Superpowers brainstorm sessions
+.superpowers/
 demos/
 
 # Logs
